@@ -2,6 +2,8 @@
 
 Complete exam preparation materials for Object-Oriented Programming (OOP) in Java, available in **English** and **Romanian**.
 
+> Last updated: February 2026
+
 [🇺🇸 English Version](#english-version) | [🇷🇴 Versiune în Limba Română](#versiune-în-limba-română)
 
 ---
