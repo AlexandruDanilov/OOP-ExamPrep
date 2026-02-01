@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Java - Lab 2: Obiecte</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; color: #212529; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { text-align: center; color: #d63384; margin-bottom: 30px; border-bottom: 2px solid #d63384; padding-bottom: 10px; }
+        .quiz-container { display: flex; flex-direction: column; gap: 20px; }
+        .question-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); border-left: 6px solid #d63384; }
+        .question-text { font-weight: 700; font-size: 1.15em; margin-bottom: 15px; }
+        .code-snippet { background-color: #2d2d2d; color: #f8f8f2; padding: 12px; border-radius: 6px; font-family: 'Consolas', monospace; font-size: 0.95em; margin-bottom: 15px; display: block; overflow-x: auto; border: 1px solid #444; }
+        .options label { display: flex; align-items: center; padding: 12px; border-radius: 8px; cursor: pointer; border: 1px solid #e9ecef; margin-bottom: 8px; transition: all 0.2s; }
+        .options label:hover { background-color: #fce4ec; border-color: #d63384; }
+        input[type="radio"] { margin-right: 15px; transform: scale(1.3); accent-color: #d63384; }
+        
+        .check-btn { background-color: #d63384; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-size: 1em; margin-top: 15px; font-weight: bold; transition: background 0.3s; }
+        .check-btn:hover { background-color: #a02060; }
+        .check-btn:disabled { background-color: #ccc; cursor: not-allowed; }
+
+        .feedback { margin-top: 15px; padding: 15px; border-radius: 8px; display: none; }
+        .feedback.correct { background-color: #d1e7dd; color: #0f5132; border: 1px solid #badbcc; }
+        .feedback.incorrect { background-color: #f8d7da; color: #842029; border: 1px solid #f5c6cb; }
+        
+        .score-board { position: fixed; bottom: 20px; right: 20px; background: #343a40; color: white; padding: 15px 30px; border-radius: 50px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); font-weight: bold; font-size: 1.2em; z-index: 100; }
+    </style>
+</head>
+<body>
+
+    <h1>🧱 Quiz: Clase, Obiecte & Static</h1>
+    
+    <div class="quiz-container" id="quiz-container"></div>
+    <div class="score-board" id="score-display">Scor: 0 / 12</div>
+
+    <script>
+        const questions = [
+            {
+                id: 1,
+                text: "Unde sunt stocate obiectele create cu `new` în Java?",
+                code: null,
+                options: [
+                    { val: "a", text: "Stack (Stivă)" },
+                    { val: "b", text: "Heap (Grămadă)" },
+                    { val: "c", text: "Registri CPU" },
+                    { val: "d", text: "Static Area" }
+                ],
+                correct: "b",
+                expl: "Obiectele sunt alocate dinamic în Heap. Pe Stack se țin doar referințele către ele și variabilele primitive locale."
+            },
+            {
+                id: 2,
+                text: "Ce se întâmplă dacă definești un constructor cu parametri într-o clasă?",
+                code: "class Test {\n  Test(int x) { ... }\n}",
+                options: [
+                    { val: "a", text: "Compilatorul păstrează și constructorul default." },
+                    { val: "b", text: "Constructorul default este șters automat." },
+                    { val: "c", text: "Eroare de compilare." },
+                    { val: "d", text: "Nu se întâmplă nimic special." }
+                ],
+                correct: "b",
+                expl: "Dacă scrii ORICE constructor explicit, Java NU mai generează constructorul default. `new Test()` va da eroare."
+            },
+            {
+                id: 3,
+                text: "Poți folosi keyword-ul `this` într-o metodă statică?",
+                code: "static void test() {\n  this.x = 10; // ?\n}",
+                options: [
+                    { val: "a", text: "Da, mereu." },
+                    { val: "b", text: "Da, dar doar pentru variabile statice." },
+                    { val: "c", text: "Nu, niciodată." },
+                    { val: "d", text: "Doar dacă clasa este instanțiată." }
+                ],
+                correct: "c",
+                expl: "Metodele statice aparțin clasei, nu instanței. Nu există contextul `this` (instanța curentă) într-un context static."
+            },
+            {
+                id: 4,
+                text: "Ce afișează codul următor?",
+                code: "public void metoda(int x) {\n  x = 10;\n}\n\nint a = 5;\nmetoda(a);\nSystem.out.println(a);",
+                options: [
+                    { val: "a", text: "10" },
+                    { val: "b", text: "5" },
+                    { val: "c", text: "0" },
+                    { val: "d", text: "Eroare" }
+                ],
+                correct: "b",
+                expl: "Java trimite parametrii prin valoare (copiere). `x` este o copie a lui `a`. Modificarea lui `x` nu afectează `a`."
+            },
+            {
+                id: 5,
+                text: "Care este modificatorul de acces care permite accesul doar în cadrul aceleiași clase?",
+                code: null,
+                options: [
+                    { val: "a", text: "protected" },
+                    { val: "b", text: "default" },
+                    { val: "c", text: "public" },
+                    { val: "d", text: "private" }
+                ],
+                correct: "d",
+                expl: "`private` este cel mai restrictiv nivel de acces (încapsulare totală)."
+            },
+            {
+                id: 6,
+                text: "Cum se face apelul unui alt constructor din aceeași clasă?",
+                code: null,
+                options: [
+                    { val: "a", text: "super()" },
+                    { val: "b", text: "Test()" },
+                    { val: "c", text: "this()" },
+                    { val: "d", text: "new Test()" }
+                ],
+                correct: "c",
+                expl: "`this(...)` este folosit pentru constructor chaining. Trebuie să fie prima instrucțiune."
+            },
+            {
+                id: 7,
+                text: "Când se execută un bloc static `static { ... }`?",
+                code: null,
+                options: [
+                    { val: "a", text: "La fiecare instanțiere a clasei (new)." },
+                    { val: "b", text: "O singură dată, la încărcarea clasei în memorie." },
+                    { val: "c", text: "Doar când apelăm manual blocul." },
+                    { val: "d", text: "După constructor." }
+                ],
+                correct: "b",
+                expl: "Blocurile statice se execută o singură dată per rulare a programului, când ClassLoader-ul încarcă clasa, înainte de orice `new`."
+            },
+            {
+                id: 8,
+                text: "Ce este 'Shadowing' în contextul variabilelor?",
+                code: "class A { int x; \n  void setX(int x) { ... } \n}",
+                options: [
+                    { val: "a", text: "Când o variabilă este privată." },
+                    { val: "b", text: "Când o variabilă statică ascunde una de instanță." },
+                    { val: "c", text: "Când o variabilă locală (parametru) are același nume cu un câmp." },
+                    { val: "d", text: "Când Garbage Collector șterge variabila." }
+                ],
+                correct: "c",
+                expl: "Parametrul `x` ascunde câmpul `x`. Pentru a accesa câmpul, trebuie să folosim `this.x`."
+            },
+            {
+                id: 9,
+                text: "Dacă `s` este o referință `null`, ce se întâmplă la `s.metoda()`?",
+                code: "Student s = null;\ns.getGrade();",
+                options: [
+                    { val: "a", text: "Returnează 0." },
+                    { val: "b", text: "Nu face nimic." },
+                    { val: "c", text: "Aruncă `NullPointerException`." },
+                    { val: "d", text: "Creează automat un obiect." }
+                ],
+                correct: "c",
+                expl: "Accesarea membrilor unei referințe null cauzează eroarea NullPointerException."
+            },
+            {
+                id: 10,
+                text: "Care afirmație este adevărată despre Supraîncărcare (Overloading)?",
+                code: null,
+                options: [
+                    { val: "a", text: "Metodele trebuie să aibă tip returnat diferit." },
+                    { val: "b", text: "Metodele trebuie să aibă parametri diferiți (tip sau număr)." },
+                    { val: "c", text: "Metodele trebuie să fie în clase diferite." },
+                    { val: "d", text: "Doar metodele statice se pot supraîncărca." }
+                ],
+                correct: "b",
+                expl: "Semnătura metodei este dată de Nume + Parametri. Return type-ul nu contează."
+            },
+            {
+                id: 11,
+                text: "Care este valoarea implicită pentru un câmp de tip `int` neinițializat?",
+                code: "class A { int x; }",
+                options: [
+                    { val: "a", text: "1" },
+                    { val: "b", text: "null" },
+                    { val: "c", text: "garbage value" },
+                    { val: "d", text: "0" }
+                ],
+                correct: "d",
+                expl: "Câmpurile (nu variabilele locale!) sunt inițializate automat cu 0, false sau null."
+            },
+            {
+                id: 12,
+                text: "Ce face următorul cod?",
+                code: "static void change(Student s) {\n  s = new Student();\n}",
+                options: [
+                    { val: "a", text: "Modifică obiectul original din main." },
+                    { val: "b", text: "Nu modifică referința originală din main." },
+                    { val: "c", text: "Dă eroare de compilare." },
+                    { val: "d", text: "Șterge obiectul original." }
+                ],
+                correct: "b",
+                expl: "Referința `s` este copiată. Metoda schimbă doar copia locală să arate spre un obiect nou. Referința din main rămâne neschimbată."
+            }
+        ];
+
+        let score = 0;
+        const container = document.getElementById('quiz-container');
+
+        questions.forEach(q => {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            
+            let codeHtml = q.code ? `<code class="code-snippet">${q.code}</code>` : '';
+            
+            let optionsHtml = '';
+            q.options.forEach(opt => {
+                optionsHtml += `
+                    <label>
+                        <input type="radio" name="q${q.id}" value="${opt.val}">
+                        ${opt.text}
+                    </label>
+                `;
+            });
+
+            card.innerHTML = `
+                <div class="question-text">${q.id}. ${q.text}</div>
+                ${codeHtml}
+                <div class="options">${optionsHtml}</div>
+                <button class="check-btn" onclick="checkAnswer(${q.id}, '${q.correct}')">Verifică Răspunsul</button>
+                <div id="feedback-${q.id}" class="feedback"></div>
+            `;
+            container.appendChild(card);
+        });
+
+        function checkAnswer(id, correctVal) {
+            const selected = document.querySelector(`input[name="q${id}"]:checked`);
+            const feedbackDiv = document.getElementById(`feedback-${id}`);
+            const btn = document.querySelector(`button[onclick="checkAnswer(${id}, '${correctVal}')"]`);
+            
+            if (!selected) {
+                alert("Alege o variantă!");
+                return;
+            }
+
+            const inputs = document.querySelectorAll(`input[name="q${id}"]`);
+            inputs.forEach(input => input.disabled = true);
+            btn.disabled = true;
+            btn.textContent = "Verificat";
+
+            const questionData = questions.find(q => q.id === id);
+            feedbackDiv.style.display = 'block';
+
+            if (selected.value === correctVal) {
+                feedbackDiv.className = 'feedback correct';
+                feedbackDiv.innerHTML = `<strong>✅ Corect!</strong> ${questionData.expl}`;
+                score++;
+                document.getElementById('score-display').innerText = `Scor: ${score} / ${questions.length}`;
+            } else {
+                feedbackDiv.className = 'feedback incorrect';
+                feedbackDiv.innerHTML = `<strong>❌ Greșit.</strong> ${questionData.expl}`;
+            }
+        }
+    </script>
+</body>
+</html>

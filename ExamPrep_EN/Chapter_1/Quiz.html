@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Java - Lab 1: Introduction</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e3f2fd; color: #0d47a1; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { text-align: center; color: #1565c0; margin-bottom: 30px; border-bottom: 3px solid #1565c0; padding-bottom: 10px; }
+        .quiz-container { display: flex; flex-direction: column; gap: 20px; }
+        .question-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-left: 6px solid #1565c0; }
+        .question-text { font-weight: 700; font-size: 1.1em; margin-bottom: 15px; }
+        .code-snippet { background-color: #263238; color: #eceff1; padding: 12px; border-radius: 6px; font-family: 'Consolas', monospace; font-size: 0.9em; margin-bottom: 15px; display: block; overflow-x: auto; }
+        .options label { display: flex; align-items: center; padding: 12px; border-radius: 8px; cursor: pointer; border: 1px solid #bbdefb; margin-bottom: 8px; transition: all 0.2s; }
+        .options label:hover { background-color: #e3f2fd; border-color: #1565c0; }
+        input[type="radio"] { margin-right: 15px; transform: scale(1.3); accent-color: #1565c0; }
+        
+        .check-btn { background-color: #1565c0; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-size: 1em; margin-top: 15px; font-weight: bold; transition: background 0.3s; }
+        .check-btn:hover { background-color: #0d47a1; }
+        .check-btn:disabled { background-color: #90caf9; cursor: not-allowed; }
+
+        .feedback { margin-top: 15px; padding: 15px; border-radius: 8px; display: none; }
+        .feedback.correct { background-color: #c8e6c9; color: #1b5e20; border: 1px solid #a5d6a7; }
+        .feedback.incorrect { background-color: #ffcdd2; color: #b71c1c; border: 1px solid #ef9a9a; }
+        
+        .score-board { position: fixed; bottom: 20px; right: 20px; background: #263238; color: white; padding: 15px 25px; border-radius: 50px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); font-weight: bold; font-size: 1.2em; z-index: 100; }
+    </style>
+</head>
+<body>
+
+    <h1>☕ Quiz: Lab 1 (Java Basics)</h1>
+    
+    <div class="quiz-container" id="quiz-container"></div>
+    <div class="score-board" id="score-display">Score: 0 / 12</div>
+
+    <script>
+        const questions = [
+            {
+                id: 1,
+                text: "What is the correct signature for the main method?",
+                code: null,
+                options: [
+                    { val: "a", text: "public void main(String[] args)" },
+                    { val: "b", text: "public static int main(String args)" },
+                    { val: "c", text: "public static void main(String[] args)" },
+                    { val: "d", text: "static void main(String args)" }
+                ],
+                correct: "c",
+                expl: "The main method must be `public` (visible), `static` (callable without object), `void` (no return) and take an array of Strings."
+            },
+            {
+                id: 2,
+                text: "What happens when you compile `javac Main.java` successfully?",
+                code: null,
+                options: [
+                    { val: "a", text: "Main.exe file is created" },
+                    { val: "b", text: "Main.class file is created (bytecode)" },
+                    { val: "c", text: "Program runs automatically" },
+                    { val: "d", text: ".jar file is created" }
+                ],
+                correct: "b",
+                expl: "The Java compiler (`javac`) transforms source code into bytecode (`.class`)."
+            },
+            {
+                id: 3,
+                text: "What is the size of an `int` in Java?",
+                code: null,
+                options: [
+                    { val: "a", text: "16 bits" },
+                    { val: "b", text: "32 bits" },
+                    { val: "c", text: "64 bits" },
+                    { val: "d", text: "Depends on the operating system" }
+                ],
+                correct: "b",
+                expl: "In Java, primitive sizes are fixed and platform-independent. `int` is always 32 bits."
+            },
+            {
+                id: 4,
+                text: "What does the following code output?",
+                code: "System.out.println(10 + 20 + \"Java\");",
+                options: [
+                    { val: "a", text: "1020Java" },
+                    { val: "b", text: "30Java" },
+                    { val: "c", text: "Error" },
+                    { val: "d", text: "10 20 Java" }
+                ],
+                correct: "b",
+                expl: "Evaluation is left to right. `10 + 20` is mathematical (30), then `30 + \"Java\"` becomes string concatenation (\"30Java\")."
+            },
+            {
+                id: 5,
+                text: "Which of the following assignments is VALID?",
+                code: null,
+                options: [
+                    { val: "a", text: "float f = 3.14;" },
+                    { val: "b", text: "long L = 100;" },
+                    { val: "c", text: "int i = 10.5;" },
+                    { val: "d", text: "boolean b = 1;" }
+                ],
+                correct: "b",
+                expl: "a) needs `3.14f`. c) loses data (needs cast). d) boolean is only `true/false`. b) is valid (widening from int to long)."
+            },
+            {
+                id: 6,
+                text: "How do you declare an array of 10 integers?",
+                code: null,
+                options: [
+                    { val: "a", text: "int arr[10];" },
+                    { val: "b", text: "int[] arr = new int[10];" },
+                    { val: "c", text: "int arr = new int(10);" },
+                    { val: "d", text: "array arr = new int[10];" }
+                ],
+                correct: "b",
+                expl: "Correct syntax is `type[] name = new type[size];`."
+            },
+            {
+                id: 7,
+                text: "What happens at `byte b = (byte) 130;`?",
+                code: null,
+                options: [
+                    { val: "a", text: "b becomes 130" },
+                    { val: "b", text: "Compile error" },
+                    { val: "c", text: "b becomes -126 (Overflow)" },
+                    { val: "d", text: "b becomes 127 (Maximum)" }
+                ],
+                correct: "c",
+                expl: "Byte range is [-128, 127]. 130 exceeds maximum and wraps around to the negative side (cyclic behavior)."
+            },
+            {
+                id: 8,
+                text: "The `break` statement can be used in:",
+                code: null,
+                options: [
+                    { val: "a", text: "Only in switch" },
+                    { val: "b", text: "Only in loops (for, while)" },
+                    { val: "c", text: "In switch and loops" },
+                    { val: "d", text: "In if/else methods" }
+                ],
+                correct: "c",
+                expl: "`break` is used to exit early from a `switch` or a loop."
+            },
+            {
+                id: 9,
+                text: "What is the default value of an element in an `int[]`?",
+                code: null,
+                options: [
+                    { val: "a", text: "null" },
+                    { val: "b", text: "1" },
+                    { val: "c", text: "-1" },
+                    { val: "d", text: "0" }
+                ],
+                correct: "d",
+                expl: "Java automatically initializes numeric primitive arrays with 0."
+            },
+            {
+                id: 10,
+                text: "What does the `%` operator do?",
+                code: "int x = 10 % 3;",
+                options: [
+                    { val: "a", text: "Divides numbers (3.33)" },
+                    { val: "b", text: "Returns quotient of division (3)" },
+                    { val: "c", text: "Returns remainder of division (1)" },
+                    { val: "d", text: "Calculates percentage" }
+                ],
+                correct: "c",
+                expl: "The Modulo operator (`%`) returns the remainder of integer division."
+            },
+            {
+                id: 11,
+                text: "Which primitive data type takes the most space?",
+                code: null,
+                options: [
+                    { val: "a", text: "int" },
+                    { val: "b", text: "double and long" },
+                    { val: "c", text: "float" },
+                    { val: "d", text: "boolean" }
+                ],
+                correct: "b",
+                expl: "Both `double` and `long` take 64 bits."
+            },
+            {
+                id: 12,
+                text: "If `x=5`, what value does `y` have after `y = x++`?",
+                code: null,
+                options: [
+                    { val: "a", text: "5" },
+                    { val: "b", text: "6" },
+                    { val: "c", text: "4" },
+                    { val: "d", text: "Error" }
+                ],
+                correct: "a",
+                expl: "The postfix operator (`x++`) returns the old value (5) for assignment, then increments x to 6."
+            }
+        ];
+
+        let score = 0;
+        const container = document.getElementById('quiz-container');
+
+        questions.forEach(q => {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            
+            let codeHtml = q.code ? `<code class="code-snippet">${q.code}</code>` : '';
+            
+            let optionsHtml = '';
+            q.options.forEach(opt => {
+                optionsHtml += `
+                    <label>
+                        <input type="radio" name="q${q.id}" value="${opt.val}">
+                        ${opt.text}
+                    </label>
+                `;
+            });
+
+            card.innerHTML = `
+                <div class="question-text">${q.id}. ${q.text}</div>
+                ${codeHtml}
+                <div class="options">${optionsHtml}</div>
+                <button class="check-btn" onclick="checkAnswer(${q.id}, '${q.correct}')">Check Answer</button>
+                <div id="feedback-${q.id}" class="feedback"></div>
+            `;
+            container.appendChild(card);
+        });
+
+        function checkAnswer(id, correctVal) {
+            const selected = document.querySelector(`input[name="q${id}"]:checked`);
+            const feedbackDiv = document.getElementById(`feedback-${id}`);
+            const btn = document.querySelector(`button[onclick="checkAnswer(${id}, '${correctVal}')"]`);
+            
+            if (!selected) {
+                alert("Choose an option!");
+                return;
+            }
+
+            const inputs = document.querySelectorAll(`input[name="q${id}"]`);
+            inputs.forEach(input => input.disabled = true);
+            btn.disabled = true;
+            btn.textContent = "Checked";
+
+            const questionData = questions.find(q => q.id === id);
+            feedbackDiv.style.display = 'block';
+
+            if (selected.value === correctVal) {
+                feedbackDiv.className = 'feedback correct';
+                feedbackDiv.innerHTML = `<strong>✅ Correct!</strong> ${questionData.expl}`;
+                score++;
+                document.getElementById('score-display').innerText = `Score: ${score} / ${questions.length}`;
+            } else {
+                feedbackDiv.className = 'feedback incorrect';
+                feedbackDiv.innerHTML = `<strong>❌ Incorrect.</strong> ${questionData.expl}`;
+            }
+        }
+    </script>
+</body>
+</html>

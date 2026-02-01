@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Java - Lab 3: Design Avansat</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; color: #1f2937; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { text-align: center; color: #7c3aed; margin-bottom: 30px; border-bottom: 3px solid #7c3aed; padding-bottom: 10px; }
+        .quiz-container { display: flex; flex-direction: column; gap: 20px; }
+        .question-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-left: 6px solid #7c3aed; }
+        .question-text { font-weight: 700; font-size: 1.1em; margin-bottom: 15px; }
+        .code-snippet { background-color: #111827; color: #e5e7eb; padding: 12px; border-radius: 6px; font-family: 'Consolas', monospace; font-size: 0.9em; margin-bottom: 15px; display: block; overflow-x: auto; }
+        .options label { display: flex; align-items: center; padding: 12px; border-radius: 8px; cursor: pointer; border: 1px solid #e5e7eb; margin-bottom: 8px; transition: all 0.2s; }
+        .options label:hover { background-color: #ede9fe; border-color: #7c3aed; }
+        input[type="radio"] { margin-right: 15px; transform: scale(1.3); accent-color: #7c3aed; }
+        
+        .check-btn { background-color: #7c3aed; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-size: 1em; margin-top: 15px; font-weight: bold; transition: background 0.3s; }
+        .check-btn:hover { background-color: #5b21b6; }
+        .check-btn:disabled { background-color: #9ca3af; cursor: not-allowed; }
+
+        .feedback { margin-top: 15px; padding: 15px; border-radius: 8px; display: none; }
+        .feedback.correct { background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .feedback.incorrect { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        
+        .score-board { position: fixed; bottom: 20px; right: 20px; background: #1f2937; color: white; padding: 15px 25px; border-radius: 50px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); font-weight: bold; font-size: 1.2em; z-index: 100; }
+    </style>
+</head>
+<body>
+
+    <h1>🏛️ Quiz: Inheritance & Polymorphism</h1>
+    
+    <div class="quiz-container" id="quiz-container"></div>
+    <div class="score-board" id="score-display">Scor: 0 / 12</div>
+
+    <script>
+        const questions = [
+            {
+                id: 1,
+                text: "Care este diferența cheie între Agregare și Compunere?",
+                code: null,
+                options: [
+                    { val: "a", text: "Compunerea folosește `extends`, Agregarea nu." },
+                    { val: "b", text: "În Agregare obiectul conținut moare odată cu containerul." },
+                    { val: "c", text: "În Compunere obiectul conținut depinde de ciclul de viață al containerului (Strong Has-A)." },
+                    { val: "d", text: "Nu există nicio diferență în Java." }
+                ],
+                correct: "c",
+                expl: "Compunerea este o relație 'puternică'. Dacă obiectul părinte este distrus, și obiectele copil create de el sunt distruse automat."
+            },
+            {
+                id: 2,
+                text: "Dacă nu scrii explicit `super()` în constructorul copilului, ce face compilatorul?",
+                code: "class Parent { Parent() {} }\nclass Child extends Parent {\n  Child() { System.out.println('Hi'); }\n}",
+                options: [
+                    { val: "a", text: "Dă eroare de compilare." },
+                    { val: "b", text: "Introduce automat `super()` ca prima linie." },
+                    { val: "c", text: "Nu apelează constructorul părintelui." },
+                    { val: "d", text: "Apelează constructorul părintelui la final." }
+                ],
+                correct: "b",
+                expl: "Java garantează inițializarea părintelui. Dacă există un constructor fără parametri în părinte, compilatorul îl apelează automat la început."
+            },
+            {
+                id: 3,
+                text: "Ce restricție impune o clasă declarată `final`?",
+                code: "final class String { ... }",
+                options: [
+                    { val: "a", text: "Nu poate fi instanțiată." },
+                    { val: "b", text: "Toate metodele ei sunt statice." },
+                    { val: "c", text: "Nu poate fi moștenită (extended)." },
+                    { val: "d", text: "Este o clasă abstractă." }
+                ],
+                correct: "c",
+                expl: "`final` la nivel de clasă blochează moștenirea. Este folosit pentru securitate și imutabilitate (ex: String)."
+            },
+            {
+                id: 4,
+                text: "Ce este Upcasting-ul?",
+                code: "Animal a = new Dog();",
+                options: [
+                    { val: "a", text: "O operație nesigură ce necesită verificare." },
+                    { val: "b", text: "Conversia automată de la Copil la Părinte." },
+                    { val: "c", text: "Permite accesul la metodele specifice clasei Dog." },
+                    { val: "d", text: "Schimbă obiectul din memorie din Dog în Animal." }
+                ],
+                correct: "b",
+                expl: "Upcasting (copil -> părinte) este mereu sigur și implicit. Obiectul din memorie rămâne Dog, dar referința este Animal."
+            },
+            {
+                id: 5,
+                text: "Ce va produce următorul cod?",
+                code: "Animal a = new Animal();\nDog d = (Dog) a;",
+                options: [
+                    { val: "a", text: "Funcționează corect." },
+                    { val: "b", text: "Eroare de compilare." },
+                    { val: "c", text: "Creează un câine din animal." },
+                    { val: "d", text: "Eroare la runtime: ClassCastException." }
+                ],
+                correct: "d",
+                expl: "Downcasting-ul eșuează la rulare dacă obiectul real din memorie nu este de tipul la care încerci să faci cast."
+            },
+            {
+                id: 6,
+                text: "Care este rolul `VTable` (Virtual Method Table)?",
+                code: null,
+                options: [
+                    { val: "a", text: "Stochează variabilele statice." },
+                    { val: "b", text: "Rezolvă apelurile polimorfice (overriding) la runtime." },
+                    { val: "c", text: "Optimizează constructorii." },
+                    { val: "d", text: "Gestionează Garbage Collection." }
+                ],
+                correct: "b",
+                expl: "JVM folosește VTable pentru a ști rapid ce versiune a unei metode suprascrise să apeleze pentru un anumit obiect."
+            },
+            {
+                id: 7,
+                text: "Unde trebuie să fie plasată instrucțiunea `super(x)` în constructor?",
+                code: null,
+                options: [
+                    { val: "a", text: "Oriunde." },
+                    { val: "b", text: "Ultima linie." },
+                    { val: "c", text: "Prima linie." },
+                    { val: "d", text: "Doar în blocul try-catch." }
+                ],
+                correct: "c",
+                expl: "Pentru a asigura că 'fundația' (părintele) este construită înainte de 'etaj' (copilul), `super` este obligatoriu prima instrucțiune."
+            },
+            {
+                id: 8,
+                text: "Metodele `static` suportă Overriding (Suprascriere)?",
+                code: null,
+                options: [
+                    { val: "a", text: "Da." },
+                    { val: "b", text: "Nu, ele pot fi doar 'ascunse' (Method Hiding)." },
+                    { val: "c", text: "Doar dacă sunt și `final`." },
+                    { val: "d", text: "Doar în clase abstracte." }
+                ],
+                correct: "b",
+                expl: "Metodele statice aparțin clasei, nu instanței. Ele nu folosesc VTable și nu au polimorfism dinamic."
+            },
+            {
+                id: 9,
+                text: "Ce vizibilitate oferă `protected`?",
+                code: null,
+                options: [
+                    { val: "a", text: "Doar în clasa curentă." },
+                    { val: "b", text: "În tot proiectul." },
+                    { val: "c", text: "În același pachet ȘI în subclase din alte pachete." },
+                    { val: "d", text: "Doar în subclase, dar nu în același pachet." }
+                ],
+                correct: "c",
+                expl: "`protected` este gândit special pentru moștenire. Permite accesul copiilor, indiferent de pachet."
+            },
+            {
+                id: 10,
+                text: "De ce evităm folosirea excesivă a `instanceof`?",
+                code: "if (x instanceof Dog) ...",
+                options: [
+                    { val: "a", text: "Este foarte lent." },
+                    { val: "b", text: "Încalcă principiile OOP (Open-Closed). Ar trebui folosit polimorfismul." },
+                    { val: "c", text: "Nu funcționează cu interfețe." },
+                    { val: "d", text: "Dă eroare de compilare." }
+                ],
+                correct: "b",
+                expl: "Dacă ai multe `if-instanceof`, înseamnă că nu folosești corect metodele suprascrise (polimorfismul)."
+            },
+            {
+                id: 11,
+                text: "Ce face implementarea implicită a metodei `equals()` din clasa Object?",
+                code: null,
+                options: [
+                    { val: "a", text: "Compară toate câmpurile." },
+                    { val: "b", text: "Compară referințele (adresele), la fel ca `==`." },
+                    { val: "c", text: "Returnează mereu true." },
+                    { val: "d", text: "Aruncă excepție." }
+                ],
+                correct: "b",
+                expl: "Dacă nu o suprascrii, `equals` verifică doar dacă e vorba de exact același obiect în memorie."
+            },
+            {
+                id: 12,
+                text: "Poți restrânge accesul unei metode suprascrise (din public în private)?",
+                code: "Parent: public void m() -> Child: private void m()",
+                options: [
+                    { val: "a", text: "Da." },
+                    { val: "b", text: "Nu, vizibilitatea trebuie să fie la fel sau mai mare." },
+                    { val: "c", text: "Doar dacă clasa e abstractă." },
+                    { val: "d", text: "Nu contează." }
+                ],
+                correct: "b",
+                expl: "Regula Liskov: Dacă părintele a promis că metoda e publică, copilul nu are voie să o ascundă."
+            }
+        ];
+
+        let score = 0;
+        const container = document.getElementById('quiz-container');
+
+        questions.forEach(q => {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            
+            let codeHtml = q.code ? `<code class="code-snippet">${q.code}</code>` : '';
+            
+            let optionsHtml = '';
+            q.options.forEach(opt => {
+                optionsHtml += `
+                    <label>
+                        <input type="radio" name="q${q.id}" value="${opt.val}">
+                        ${opt.text}
+                    </label>
+                `;
+            });
+
+            card.innerHTML = `
+                <div class="question-text">${q.id}. ${q.text}</div>
+                ${codeHtml}
+                <div class="options">${optionsHtml}</div>
+                <button class="check-btn" onclick="checkAnswer(${q.id}, '${q.correct}')">Verifică Răspunsul</button>
+                <div id="feedback-${q.id}" class="feedback"></div>
+            `;
+            container.appendChild(card);
+        });
+
+        function checkAnswer(id, correctVal) {
+            const selected = document.querySelector(`input[name="q${id}"]:checked`);
+            const feedbackDiv = document.getElementById(`feedback-${id}`);
+            const btn = document.querySelector(`button[onclick="checkAnswer(${id}, '${correctVal}')"]`);
+            
+            if (!selected) {
+                alert("Alege o variantă!");
+                return;
+            }
+
+            const inputs = document.querySelectorAll(`input[name="q${id}"]`);
+            inputs.forEach(input => input.disabled = true);
+            btn.disabled = true;
+            btn.textContent = "Verificat";
+
+            const questionData = questions.find(q => q.id === id);
+            feedbackDiv.style.display = 'block';
+
+            if (selected.value === correctVal) {
+                feedbackDiv.className = 'feedback correct';
+                feedbackDiv.innerHTML = `<strong>✅ Corect!</strong> ${questionData.expl}`;
+                score++;
+                document.getElementById('score-display').innerText = `Scor: ${score} / ${questions.length}`;
+            } else {
+                feedbackDiv.className = 'feedback incorrect';
+                feedbackDiv.innerHTML = `<strong>❌ Greșit.</strong> ${questionData.expl}`;
+            }
+        }
+    </script>
+</body>
+</html>

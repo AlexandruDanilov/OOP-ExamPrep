@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Java - Lab 7: Excepții & I/O</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #fafafa; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { text-align: center; color: #424242; margin-bottom: 30px; border-bottom: 3px solid #424242; padding-bottom: 10px; }
+        .quiz-container { display: flex; flex-direction: column; gap: 20px; }
+        .question-card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid #424242; }
+        .question-text { font-weight: 700; font-size: 1.1em; margin-bottom: 15px; }
+        .options label { display: flex; align-items: center; padding: 10px; border-radius: 4px; cursor: pointer; border: 1px solid #eee; margin-bottom: 5px; transition: all 0.2s; }
+        .options label:hover { background-color: #f5f5f5; }
+        input[type="radio"] { margin-right: 15px; transform: scale(1.2); accent-color: #424242; }
+        .check-btn { background-color: #424242; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 1em; margin-top: 15px; font-weight: bold; }
+        .check-btn:hover { background-color: #212121; }
+        .check-btn:disabled { background-color: #bdbdbd; cursor: not-allowed; }
+        .feedback { margin-top: 15px; padding: 15px; border-radius: 4px; display: none; }
+        .feedback.correct { background-color: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+        .feedback.incorrect { background-color: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+        .score-board { position: fixed; bottom: 20px; right: 20px; background: #212121; color: white; padding: 15px 25px; border-radius: 50px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>💥 Quiz: Excepții & I/O</h1>
+    
+    <div class="quiz-container" id="quiz-container"></div>
+    <div class="score-board" id="score-display">Scor: 0 / 10</div>
+
+    <script>
+        const questions = [
+            {
+                id: 1,
+                text: "Care este clasa părinte a tuturor excepțiilor și erorilor?",
+                options: [
+                    { val: "a", text: "Exception" },
+                    { val: "b", text: "Throwable" },
+                    { val: "c", text: "Error" },
+                    { val: "d", text: "Object" }
+                ],
+                correct: "b",
+                expl: "Atât `Exception` cât și `Error` moștenesc clasa `Throwable`."
+            },
+            {
+                id: 2,
+                text: "Ce clasă I/O este ideală pentru citirea tokenilor (numere, cuvinte) cu parsing automat?",
+                options: [
+                    { val: "a", text: "BufferedReader" },
+                    { val: "b", text: "Scanner" },
+                    { val: "c", text: "FileReader" },
+                    { val: "d", text: "InputStreamReader" }
+                ],
+                correct: "b",
+                expl: "`Scanner` oferă metode precum `nextInt()`, `nextDouble()` care fac parsing automat."
+            },
+            {
+                id: 3,
+                text: "Dacă vrei să specifici manual encoding-ul (ex: UTF-8) la citire, ce folosești?",
+                options: [
+                    { val: "a", text: "FileReader" },
+                    { val: "b", text: "InputStreamReader" },
+                    { val: "c", text: "FileInputStream" },
+                    { val: "d", text: "Scanner" }
+                ],
+                correct: "b",
+                expl: "`InputStreamReader` este puntea dintre bytes și chars și permite setarea charset-ului în constructor."
+            },
+            {
+                id: 4,
+                text: "Ce metodă din `BufferedWriter` adaugă un separator de linie portabil (cross-platform)?",
+                options: [
+                    { val: "a", text: "write(\"\\n\")" },
+                    { val: "b", text: "newLine()" },
+                    { val: "c", text: "writeLine()" },
+                    { val: "d", text: "appendLine()" }
+                ],
+                correct: "b",
+                expl: "`newLine()` inserează separatorul corect de sistem (\\n pe Unix, \\r\\n pe Windows)."
+            },
+            {
+                id: 5,
+                text: "Care tip de excepție NU te obligă compilatorul să o tratezi?",
+                options: [
+                    { val: "a", text: "IOException" },
+                    { val: "b", text: "SQLException" },
+                    { val: "c", text: "RuntimeException" },
+                    { val: "d", text: "FileNotFoundException" }
+                ],
+                correct: "c",
+                expl: "`RuntimeException` (și subclasele ei) sunt Unchecked Exceptions."
+            },
+            {
+                id: 6,
+                text: "Ce se întâmplă dacă scrii într-un fișier existent cu `new FileWriter(\"f.txt\")` (fără append)?",
+                options: [
+                    { val: "a", text: "Adaugă text la final." },
+                    { val: "b", text: "Aruncă eroare că fișierul există." },
+                    { val: "c", text: "Suprascrie complet conținutul vechi." },
+                    { val: "d", text: "Creează o copie f_copy.txt." }
+                ],
+                correct: "c",
+                expl: "Constructorul simplu șterge conținutul existent. Pentru adăugare, folosește `new FileWriter(\"f.txt\", true)`."
+            },
+            {
+                id: 7,
+                text: "Care clasă permite navigarea la o poziție arbitrară în fișier (`seek`)?",
+                options: [
+                    { val: "a", text: "File" },
+                    { val: "b", text: "BufferedReader" },
+                    { val: "c", text: "RandomAccessFile" },
+                    { val: "d", text: "ObjectInputStream" }
+                ],
+                correct: "c",
+                expl: "`RandomAccessFile` tratează fișierul ca un array de bytes navigabil."
+            },
+            {
+                id: 8,
+                text: "Blocul `finally` se execută dacă:",
+                options: [
+                    { val: "a", text: "Doar dacă a apărut o excepție." },
+                    { val: "b", text: "Doar dacă NU a apărut o excepție." },
+                    { val: "c", text: "Întotdeauna, indiferent de excepții sau return." },
+                    { val: "d", text: "Doar dacă nu există return în try." }
+                ],
+                correct: "c",
+                expl: "`finally` este garantat să ruleze (cu excepția cazului în care JVM-ul moare subit)."
+            },
+            {
+                id: 9,
+                text: "Metoda `main` aruncă o excepție neprinsă. Ce se întâmplă?",
+                options: [
+                    { val: "a", text: "Programul se blochează într-o buclă." },
+                    { val: "b", text: "Se afișează stack trace-ul și programul se termină." },
+                    { val: "c", text: "Excepția este ignorată." },
+                    { val: "d", text: "Se restartează metoda main." }
+                ],
+                correct: "b",
+                expl: "Dacă excepția ajunge la nivelul cel mai de sus (`main`) și nu e prinsă, JVM-ul afișează eroarea și oprește execuția."
+            },
+            {
+                id: 10,
+                text: "`PrintWriter` vs `BufferedWriter`: Care are metode mai prietenoase de formatare?",
+                options: [
+                    { val: "a", text: "BufferedWriter" },
+                    { val: "b", text: "PrintWriter" },
+                    { val: "c", text: "Ambele sunt la fel." },
+                    { val: "d", text: "Niciuna." }
+                ],
+                correct: "b",
+                expl: "`PrintWriter` oferă `printf` și `println`, fiind similar cu `System.out`. `BufferedWriter` scrie doar String-uri și caractere."
+            }
+        ];
+
+        let score = 0;
+        const container = document.getElementById('quiz-container');
+
+        questions.forEach(q => {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            let optionsHtml = '';
+            q.options.forEach(opt => {
+                optionsHtml += `<label><input type="radio" name="q${q.id}" value="${opt.val}"> ${opt.text}</label>`;
+            });
+            card.innerHTML = `<div class="question-text">${q.id}. ${q.text}</div><div class="options">${optionsHtml}</div><button class="check-btn" onclick="checkAnswer(${q.id}, '${q.correct}')">Verifică</button><div id="feedback-${q.id}" class="feedback"></div>`;
+            container.appendChild(card);
+        });
+
+        function checkAnswer(id, correctVal) {
+            const selected = document.querySelector(`input[name="q${id}"]:checked`);
+            const feedbackDiv = document.getElementById(`feedback-${id}`);
+            const btn = document.querySelector(`button[onclick="checkAnswer(${id}, '${correctVal}')"]`);
+            if (!selected) return alert("Alege o variantă!");
+            
+            const inputs = document.querySelectorAll(`input[name="q${id}"]`);
+            inputs.forEach(input => input.disabled = true);
+            btn.disabled = true;
+            btn.textContent = "Verificat";
+            feedbackDiv.style.display = 'block';
+
+            const questionData = questions.find(q => q.id === id);
+            if (selected.value === correctVal) {
+                feedbackDiv.className = 'feedback correct';
+                feedbackDiv.innerHTML = `<strong>✅ Corect!</strong> ${questionData.expl}`;
+                score++;
+                document.getElementById('score-display').innerText = `Scor: ${score} / ${questions.length}`;
+            } else {
+                feedbackDiv.className = 'feedback incorrect';
+                feedbackDiv.innerHTML = `<strong>❌ Greșit.</strong> ${questionData.expl}`;
+            }
+        }
+    </script>
+</body>
+</html>

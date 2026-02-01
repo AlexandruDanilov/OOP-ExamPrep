@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Java - Lab 6: Colecții</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #fff8e1; color: #f57f17; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { text-align: center; color: #ff6f00; margin-bottom: 30px; border-bottom: 3px solid #ff6f00; padding-bottom: 10px; }
+        .quiz-container { display: flex; flex-direction: column; gap: 20px; }
+        .question-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-left: 6px solid #ff6f00; }
+        .question-text { font-weight: 700; font-size: 1.1em; margin-bottom: 15px; }
+        .code-snippet { background-color: #263238; color: #eceff1; padding: 12px; border-radius: 6px; font-family: 'Consolas', monospace; font-size: 0.9em; margin-bottom: 15px; display: block; overflow-x: auto; }
+        .options label { display: flex; align-items: center; padding: 12px; border-radius: 8px; cursor: pointer; border: 1px solid #ffecb3; margin-bottom: 8px; transition: all 0.2s; }
+        .options label:hover { background-color: #ffecb3; border-color: #ff6f00; }
+        input[type="radio"] { margin-right: 15px; transform: scale(1.3); accent-color: #ff6f00; }
+        
+        .check-btn { background-color: #ff6f00; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-size: 1em; margin-top: 15px; font-weight: bold; transition: background 0.3s; }
+        .check-btn:hover { background-color: #e65100; }
+        .check-btn:disabled { background-color: #ffcc80; cursor: not-allowed; }
+
+        .feedback { margin-top: 15px; padding: 15px; border-radius: 8px; display: none; }
+        .feedback.correct { background-color: #f1f8e9; color: #33691e; border: 1px solid #c5e1a5; }
+        .feedback.incorrect { background-color: #fbe9e7; color: #bf360c; border: 1px solid #ffccbc; }
+        
+        .score-board { position: fixed; bottom: 20px; right: 20px; background: #263238; color: white; padding: 15px 25px; border-radius: 50px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); font-weight: bold; font-size: 1.2em; z-index: 100; }
+    </style>
+</head>
+<body>
+
+    <h1>📦 Quiz: Colecții și Utilitare</h1>
+    
+    <div class="quiz-container" id="quiz-container"></div>
+    <div class="score-board" id="score-display">Scor: 0 / 12</div>
+
+    <script>
+        const questions = [
+            {
+                id: 1,
+                text: "Care colecție NU permite elemente duplicate?",
+                code: null,
+                options: [
+                    { val: "a", text: "ArrayList" },
+                    { val: "b", text: "LinkedList" },
+                    { val: "c", text: "HashSet" },
+                    { val: "d", text: "Vector" }
+                ],
+                correct: "c",
+                expl: "Interfața `Set` (și implementarea `HashSet`) garantează unicitatea elementelor. `List` permite duplicate."
+            },
+            {
+                id: 2,
+                text: "Ce se întâmplă dacă suprascrii `equals()` dar NU și `hashCode()`?",
+                code: null,
+                options: [
+                    { val: "a", text: "Eroare de compilare." },
+                    { val: "b", text: "Colecțiile bazate pe hash (HashSet, HashMap) vor funcționa incorect (nu găsesc obiectul)." },
+                    { val: "c", text: "Nu se întâmplă nimic rău." },
+                    { val: "d", text: "Metoda equals() va fi ignorată." }
+                ],
+                correct: "b",
+                expl: "HashSet folosește întâi `hashCode` pentru a găsi 'găleata' (bucket). Dacă hash-urile diferă, `equals` nici nu mai e apelat, deci obiectul e considerat diferit chiar dacă e logic egal."
+            },
+            {
+                id: 3,
+                text: "Care implementare de Map păstrează cheile sortate?",
+                code: null,
+                options: [
+                    { val: "a", text: "HashMap" },
+                    { val: "b", text: "LinkedHashMap" },
+                    { val: "c", text: "TreeMap" },
+                    { val: "d", text: "Hashtable" }
+                ],
+                correct: "c",
+                expl: "`TreeMap` folosește un arbore Roșu-Negru pentru a ține cheile ordonate natural sau conform unui Comparator."
+            },
+            {
+                id: 4,
+                text: "Ce complexitate are metoda `get(index)` într-un `ArrayList`?",
+                code: null,
+                options: [
+                    { val: "a", text: "O(1) - Constant" },
+                    { val: "b", text: "O(n) - Liniar" },
+                    { val: "c", text: "O(log n) - Logaritmic" },
+                    { val: "d", text: "O(n^2)" }
+                ],
+                correct: "a",
+                expl: "`ArrayList` este bazat pe un array. Accesul direct prin index este instantaneu."
+            },
+            {
+                id: 5,
+                text: "Care este diferența dintre `Comparable` și `Comparator`?",
+                code: null,
+                options: [
+                    { val: "a", text: "Comparable modifică clasa originală (ordine naturală), Comparator e o clasă externă." },
+                    { val: "b", text: "Comparable e pentru sortare descrescătoare, Comparator pentru crescătoare." },
+                    { val: "c", text: "Comparator se folosește doar la Set-uri." },
+                    { val: "d", text: "Nu există nicio diferență." }
+                ],
+                correct: "a",
+                expl: "`Comparable` (`compareTo`) se implementează în clasa obiectului. `Comparator` (`compare`) este un obiect separat pentru strategii de sortare flexibile."
+            },
+            {
+                id: 6,
+                text: "Ce afișează codul următor?",
+                code: "Set<String> s = new HashSet<>();\ns.add(\"Java\");\ns.add(\"Java\");\nSystem.out.println(s.size());",
+                options: [
+                    { val: "a", text: "0" },
+                    { val: "b", text: "1" },
+                    { val: "c", text: "2" },
+                    { val: "d", text: "Eroare" }
+                ],
+                correct: "b",
+                expl: "Set-urile nu permit duplicate. A doua adăugare este ignorată (sau suprascrie, dar dimensiunea rămâne 1)."
+            },
+            {
+                id: 7,
+                text: "Dacă vrei să calculezi cu bani (precizie maximă), ce clasă folosești?",
+                code: null,
+                options: [
+                    { val: "a", text: "double" },
+                    { val: "b", text: "float" },
+                    { val: "c", text: "BigDecimal" },
+                    { val: "d", text: "Long" }
+                ],
+                correct: "c",
+                expl: "`double` și `float` au erori de precizie (virgulă mobilă). `BigDecimal` oferă precizie arbitrară, esențială pentru finanțe."
+            },
+            {
+                id: 8,
+                text: "Metoda `put(k, v)` dintr-un Map returnează:",
+                code: null,
+                options: [
+                    { val: "a", text: "void (nimic)." },
+                    { val: "b", text: "Valoarea anterioară asociată cheii (sau null)." },
+                    { val: "c", text: "true/false." },
+                    { val: "d", text: "Cheia inserată." }
+                ],
+                correct: "b",
+                expl: "Dacă cheia exista deja, `put` o suprascrie și returnează valoarea veche. Dacă e cheie nouă, returnează `null`."
+            },
+            {
+                id: 9,
+                text: "Cum iterezi o listă și ștergi elemente în același timp, fără erori?",
+                code: null,
+                options: [
+                    { val: "a", text: "For-each loop" },
+                    { val: "b", text: "Iterator explicit (.remove())" },
+                    { val: "c", text: "For loop clasic descrescător" },
+                    { val: "d", text: "Nu se poate" }
+                ],
+                correct: "b",
+                expl: "Folosirea `Iterator.remove()` este metoda sigură. În `for-each`, modificarea colecției aruncă `ConcurrentModificationException`."
+            },
+            {
+                id: 10,
+                text: "Care clasă de dată/timp reprezintă o dată calendaristică fără oră?",
+                code: null,
+                options: [
+                    { val: "a", text: "LocalTime" },
+                    { val: "b", text: "LocalDateTime" },
+                    { val: "c", text: "LocalDate" },
+                    { val: "d", text: "ZonedDateTime" }
+                ],
+                correct: "c",
+                expl: "`LocalDate` stochează doar An-Lună-Zi (ex: data nașterii)."
+            },
+            {
+                id: 11,
+                text: "Care colecție NU permite chei `null`?",
+                code: null,
+                options: [
+                    { val: "a", text: "HashMap" },
+                    { val: "b", text: "LinkedHashMap" },
+                    { val: "c", text: "TreeMap" },
+                    { val: "d", text: "ArrayList" }
+                ],
+                correct: "c",
+                expl: "`TreeMap` trebuie să compare cheile pentru a le sorta. `null` nu poate fi comparat, deci aruncă `NullPointerException`."
+            },
+            {
+                id: 12,
+                text: "Ce este Autoboxing?",
+                code: "Integer x = 10;",
+                options: [
+                    { val: "a", text: "Conversia automată String -> int." },
+                    { val: "b", text: "Conversia automată int (primitivă) -> Integer (obiect)." },
+                    { val: "c", text: "Conversia automată Integer -> int." },
+                    { val: "d", text: "Crearea de constructori automați." }
+                ],
+                correct: "b",
+                expl: "Java 'împachetează' automat primitiva într-un obiect Wrapper când e nevoie."
+            }
+        ];
+
+        let score = 0;
+        const container = document.getElementById('quiz-container');
+
+        questions.forEach(q => {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            
+            let codeHtml = q.code ? `<code class="code-snippet">${q.code}</code>` : '';
+            
+            let optionsHtml = '';
+            q.options.forEach(opt => {
+                optionsHtml += `
+                    <label>
+                        <input type="radio" name="q${q.id}" value="${opt.val}">
+                        ${opt.text}
+                    </label>
+                `;
+            });
+
+            card.innerHTML = `
+                <div class="question-text">${q.id}. ${q.text}</div>
+                ${codeHtml}
+                <div class="options">${optionsHtml}</div>
+                <button class="check-btn" onclick="checkAnswer(${q.id}, '${q.correct}')">Verifică Răspunsul</button>
+                <div id="feedback-${q.id}" class="feedback"></div>
+            `;
+            container.appendChild(card);
+        });
+
+        function checkAnswer(id, correctVal) {
+            const selected = document.querySelector(`input[name="q${id}"]:checked`);
+            const feedbackDiv = document.getElementById(`feedback-${id}`);
+            const btn = document.querySelector(`button[onclick="checkAnswer(${id}, '${correctVal}')"]`);
+            
+            if (!selected) {
+                alert("Alege o variantă!");
+                return;
+            }
+
+            const inputs = document.querySelectorAll(`input[name="q${id}"]`);
+            inputs.forEach(input => input.disabled = true);
+            btn.disabled = true;
+            btn.textContent = "Verificat";
+
+            const questionData = questions.find(q => q.id === id);
+            feedbackDiv.style.display = 'block';
+
+            if (selected.value === correctVal) {
+                feedbackDiv.className = 'feedback correct';
+                feedbackDiv.innerHTML = `<strong>✅ Corect!</strong> ${questionData.expl}`;
+                score++;
+                document.getElementById('score-display').innerText = `Scor: ${score} / ${questions.length}`;
+            } else {
+                feedbackDiv.className = 'feedback incorrect';
+                feedbackDiv.innerHTML = `<strong>❌ Greșit.</strong> ${questionData.expl}`;
+            }
+        }
+    </script>
+</body>
+</html>

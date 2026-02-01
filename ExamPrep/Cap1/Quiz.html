@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Java - Lab 1: Introducere</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e3f2fd; color: #0d47a1; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { text-align: center; color: #1565c0; margin-bottom: 30px; border-bottom: 3px solid #1565c0; padding-bottom: 10px; }
+        .quiz-container { display: flex; flex-direction: column; gap: 20px; }
+        .question-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-left: 6px solid #1565c0; }
+        .question-text { font-weight: 700; font-size: 1.1em; margin-bottom: 15px; }
+        .code-snippet { background-color: #263238; color: #eceff1; padding: 12px; border-radius: 6px; font-family: 'Consolas', monospace; font-size: 0.9em; margin-bottom: 15px; display: block; overflow-x: auto; }
+        .options label { display: flex; align-items: center; padding: 12px; border-radius: 8px; cursor: pointer; border: 1px solid #bbdefb; margin-bottom: 8px; transition: all 0.2s; }
+        .options label:hover { background-color: #e3f2fd; border-color: #1565c0; }
+        input[type="radio"] { margin-right: 15px; transform: scale(1.3); accent-color: #1565c0; }
+        
+        .check-btn { background-color: #1565c0; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-size: 1em; margin-top: 15px; font-weight: bold; transition: background 0.3s; }
+        .check-btn:hover { background-color: #0d47a1; }
+        .check-btn:disabled { background-color: #90caf9; cursor: not-allowed; }
+
+        .feedback { margin-top: 15px; padding: 15px; border-radius: 8px; display: none; }
+        .feedback.correct { background-color: #c8e6c9; color: #1b5e20; border: 1px solid #a5d6a7; }
+        .feedback.incorrect { background-color: #ffcdd2; color: #b71c1c; border: 1px solid #ef9a9a; }
+        
+        .score-board { position: fixed; bottom: 20px; right: 20px; background: #263238; color: white; padding: 15px 25px; border-radius: 50px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); font-weight: bold; font-size: 1.2em; z-index: 100; }
+    </style>
+</head>
+<body>
+
+    <h1>☕ Quiz: Laborator 1 (Java Basics)</h1>
+    
+    <div class="quiz-container" id="quiz-container"></div>
+    <div class="score-board" id="score-display">Scor: 0 / 12</div>
+
+    <script>
+        const questions = [
+            {
+                id: 1,
+                text: "Care este semnătura corectă a metodei main?",
+                code: null,
+                options: [
+                    { val: "a", text: "public void main(String[] args)" },
+                    { val: "b", text: "public static int main(String args)" },
+                    { val: "c", text: "public static void main(String[] args)" },
+                    { val: "d", text: "static void main(String args)" }
+                ],
+                correct: "c",
+                expl: "Metoda main trebuie să fie `public` (vizibilă), `static` (apelabilă fără obiect), `void` (fără return) și să ia un array de String-uri."
+            },
+            {
+                id: 2,
+                text: "Ce se întâmplă dacă compilezi `javac Main.java` cu succes?",
+                code: null,
+                options: [
+                    { val: "a", text: "Se creează fișierul Main.exe" },
+                    { val: "b", text: "Se creează fișierul Main.class (bytecode)" },
+                    { val: "c", text: "Programul rulează automat" },
+                    { val: "d", text: "Se creează un fișier .jar" }
+                ],
+                correct: "b",
+                expl: "Compilatorul Java (`javac`) transformă codul sursă în bytecode (`.class`)."
+            },
+            {
+                id: 3,
+                text: "Care este dimensiunea unui `int` în Java?",
+                code: null,
+                options: [
+                    { val: "a", text: "16 biți" },
+                    { val: "b", text: "32 biți" },
+                    { val: "c", text: "64 biți" },
+                    { val: "d", text: "Depinde de sistemul de operare" }
+                ],
+                correct: "b",
+                expl: "În Java, dimensiunile primitivelor sunt fixe și independente de platformă. `int` are mereu 32 de biți."
+            },
+            {
+                id: 4,
+                text: "Ce afișează următorul cod?",
+                code: "System.out.println(10 + 20 + \"Java\");",
+                options: [
+                    { val: "a", text: "1020Java" },
+                    { val: "b", text: "30Java" },
+                    { val: "c", text: "Eroare" },
+                    { val: "d", text: "10 20 Java" }
+                ],
+                correct: "b",
+                expl: "Evaluarea se face de la stânga la dreapta. `10 + 20` este matematic (30), apoi `30 + \"Java\"` devine concatenare string (\"30Java\")."
+            },
+            {
+                id: 5,
+                text: "Care dintre următoarele atribuiri este VALIDĂ?",
+                code: null,
+                options: [
+                    { val: "a", text: "float f = 3.14;" },
+                    { val: "b", text: "long L = 100;" },
+                    { val: "c", text: "int i = 10.5;" },
+                    { val: "d", text: "boolean b = 1;" }
+                ],
+                correct: "b",
+                expl: "a) necesită `3.14f`. c) pierde date (necesită cast). d) boolean e doar `true/false`. b) este valid (widening de la int la long)."
+            },
+            {
+                id: 6,
+                text: "Cum declari un array de 10 numere întregi?",
+                code: null,
+                options: [
+                    { val: "a", text: "int arr[10];" },
+                    { val: "b", text: "int[] arr = new int[10];" },
+                    { val: "c", text: "int arr = new int(10);" },
+                    { val: "d", text: "array arr = new int[10];" }
+                ],
+                correct: "b",
+                expl: "Sintaxa corectă este `tip[] nume = new tip[dimensiune];`."
+            },
+            {
+                id: 7,
+                text: "Ce se întâmplă la `byte b = (byte) 130;`?",
+                code: null,
+                options: [
+                    { val: "a", text: "b devine 130" },
+                    { val: "b", text: "Eroare de compilare" },
+                    { val: "c", text: "b devine -126 (Overflow)" },
+                    { val: "d", text: "b devine 127 (Maxim)" }
+                ],
+                correct: "c",
+                expl: "Byte-ul are intervalul [-128, 127]. 130 depășește maximul și se întoarce pe partea negativă (comportament ciclic)."
+            },
+            {
+                id: 8,
+                text: "Instrucțiunea `break` poate fi folosită în:",
+                code: null,
+                options: [
+                    { val: "a", text: "Doar în switch" },
+                    { val: "b", text: "Doar în bucle (for, while)" },
+                    { val: "c", text: "În switch și în bucle" },
+                    { val: "d", text: "În metode if/else" }
+                ],
+                correct: "c",
+                expl: "`break` este folosit pentru a ieși prematur dintr-un `switch` sau dintr-o buclă."
+            },
+            {
+                id: 9,
+                text: "Care este valoarea implicită a unui element într-un `int[]`?",
+                code: null,
+                options: [
+                    { val: "a", text: "null" },
+                    { val: "b", text: "1" },
+                    { val: "c", text: "-1" },
+                    { val: "d", text: "0" }
+                ],
+                correct: "d",
+                expl: "Java inițializează automat array-urile primitive numerice cu 0."
+            },
+            {
+                id: 10,
+                text: "Ce face operatorul `%`?",
+                code: "int x = 10 % 3;",
+                options: [
+                    { val: "a", text: "Împarte numerele (3.33)" },
+                    { val: "b", text: "Returnează câtul împărțirii (3)" },
+                    { val: "c", text: "Returnează restul împărțirii (1)" },
+                    { val: "d", text: "Calculează procentul" }
+                ],
+                correct: "c",
+                expl: "Operatorul Modulo (`%`) returnează restul împărțirii întregi."
+            },
+            {
+                id: 11,
+                text: "Care tip de date primitive ocupă cel mai mult spațiu?",
+                code: null,
+                options: [
+                    { val: "a", text: "int" },
+                    { val: "b", text: "double și long" },
+                    { val: "c", text: "float" },
+                    { val: "d", text: "boolean" }
+                ],
+                correct: "b",
+                expl: "Atât `double` cât și `long` ocupă 64 de biți."
+            },
+            {
+                id: 12,
+                text: "Dacă `x=5`, ce valoare are `y` după `y = x++`?",
+                code: null,
+                options: [
+                    { val: "a", text: "5" },
+                    { val: "b", text: "6" },
+                    { val: "c", text: "4" },
+                    { val: "d", text: "Eroare" }
+                ],
+                correct: "a",
+                expl: "Operatorul postfix (`x++`) returnează valoarea veche (5) pentru atribuire, și abia apoi incrementează x la 6."
+            }
+        ];
+
+        let score = 0;
+        const container = document.getElementById('quiz-container');
+
+        questions.forEach(q => {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            
+            let codeHtml = q.code ? `<code class="code-snippet">${q.code}</code>` : '';
+            
+            let optionsHtml = '';
+            q.options.forEach(opt => {
+                optionsHtml += `
+                    <label>
+                        <input type="radio" name="q${q.id}" value="${opt.val}">
+                        ${opt.text}
+                    </label>
+                `;
+            });
+
+            card.innerHTML = `
+                <div class="question-text">${q.id}. ${q.text}</div>
+                ${codeHtml}
+                <div class="options">${optionsHtml}</div>
+                <button class="check-btn" onclick="checkAnswer(${q.id}, '${q.correct}')">Verifică Răspunsul</button>
+                <div id="feedback-${q.id}" class="feedback"></div>
+            `;
+            container.appendChild(card);
+        });
+
+        function checkAnswer(id, correctVal) {
+            const selected = document.querySelector(`input[name="q${id}"]:checked`);
+            const feedbackDiv = document.getElementById(`feedback-${id}`);
+            const btn = document.querySelector(`button[onclick="checkAnswer(${id}, '${correctVal}')"]`);
+            
+            if (!selected) {
+                alert("Alege o variantă!");
+                return;
+            }
+
+            const inputs = document.querySelectorAll(`input[name="q${id}"]`);
+            inputs.forEach(input => input.disabled = true);
+            btn.disabled = true;
+            btn.textContent = "Verificat";
+
+            const questionData = questions.find(q => q.id === id);
+            feedbackDiv.style.display = 'block';
+
+            if (selected.value === correctVal) {
+                feedbackDiv.className = 'feedback correct';
+                feedbackDiv.innerHTML = `<strong>✅ Corect!</strong> ${questionData.expl}`;
+                score++;
+                document.getElementById('score-display').innerText = `Scor: ${score} / ${questions.length}`;
+            } else {
+                feedbackDiv.className = 'feedback incorrect';
+                feedbackDiv.innerHTML = `<strong>❌ Greșit.</strong> ${questionData.expl}`;
+            }
+        }
+    </script>
+</body>
+</html>

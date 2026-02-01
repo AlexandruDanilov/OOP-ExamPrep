@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Java - Lab 9: Design Patterns II</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e3f2fd; color: #0d47a1; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { text-align: center; color: #1565c0; margin-bottom: 30px; border-bottom: 3px solid #1565c0; padding-bottom: 10px; }
+        .quiz-container { display: flex; flex-direction: column; gap: 20px; }
+        .question-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-left: 6px solid #1565c0; }
+        .question-text { font-weight: 700; font-size: 1.1em; margin-bottom: 15px; }
+        .options label { display: flex; align-items: center; padding: 12px; border-radius: 8px; cursor: pointer; border: 1px solid #bbdefb; margin-bottom: 8px; transition: all 0.2s; }
+        .options label:hover { background-color: #bbdefb; border-color: #1565c0; }
+        input[type="radio"] { margin-right: 15px; transform: scale(1.3); accent-color: #1565c0; }
+        .check-btn { background-color: #1565c0; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-size: 1em; margin-top: 15px; font-weight: bold; transition: background 0.3s; }
+        .check-btn:hover { background-color: #0d47a1; }
+        .check-btn:disabled { background-color: #90caf9; cursor: not-allowed; }
+        .feedback { margin-top: 15px; padding: 15px; border-radius: 8px; display: none; }
+        .feedback.correct { background-color: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
+        .feedback.incorrect { background-color: #ffebee; color: #b71c1c; border: 1px solid #ef9a9a; }
+        .score-board { position: fixed; bottom: 20px; right: 20px; background: #212121; color: white; padding: 15px 25px; border-radius: 50px; font-weight: bold; font-size: 1.2em; z-index: 100; }
+    </style>
+</head>
+<body>
+
+    <h1>🏗️ Quiz: Design Patterns II</h1>
+    
+    <div class="quiz-container" id="quiz-container"></div>
+    <div class="score-board" id="score-display">Scor: 0 / 10</div>
+
+    <script>
+        const questions = [
+            {
+                id: 1,
+                text: "Care pattern este ideal pentru un obiect cu mulți parametri opționali (ex: Pizza)?",
+                options: [
+                    { val: "a", text: "Factory Method" },
+                    { val: "b", text: "Builder" },
+                    { val: "c", text: "Singleton" },
+                    { val: "d", text: "Adapter" }
+                ],
+                correct: "b",
+                expl: "Builder elimină constructorii telescopici și permite setarea clară a parametrilor opționali pas cu pas."
+            },
+            {
+                id: 2,
+                text: "În pattern-ul Observer, cine declanșează notificarea?",
+                options: [
+                    { val: "a", text: "Observer-ul" },
+                    { val: "b", text: "Subject-ul (Subiectul)" },
+                    { val: "c", text: "Clientul" },
+                    { val: "d", text: "Factory-ul" }
+                ],
+                correct: "b",
+                expl: "Subiectul (cel care își schimbă starea) iterează prin lista de observatori și apelează metoda `update()`."
+            },
+            {
+                id: 3,
+                text: "Care pattern permite schimbarea algoritmului la runtime (ex: metoda de plată)?",
+                options: [
+                    { val: "a", text: "Strategy" },
+                    { val: "b", text: "State" },
+                    { val: "c", text: "Command" },
+                    { val: "d", text: "Template Method" }
+                ],
+                correct: "a",
+                expl: "Strategy definește o familie de algoritmi și îi face interschimbabili fără a modifica clasa care îi folosește."
+            },
+            {
+                id: 4,
+                text: "Care este avantajul principal al pattern-ului Command?",
+                options: [
+                    { val: "a", text: "Creează obiecte unice." },
+                    { val: "b", text: "Permite operații de Undo/Redo și stocarea cererilor." },
+                    { val: "c", text: "Notifică mai mulți utilizatori." },
+                    { val: "d", text: "Construiește obiecte complexe." }
+                ],
+                correct: "b",
+                expl: "Prin încapsularea acțiunii într-un obiect, putem salva starea comenzii și o putem inversa (undo)."
+            },
+            {
+                id: 5,
+                text: "În Builder pattern, ce returnează metodele de setare (ex: `cheeseCount`)?",
+                options: [
+                    { val: "a", text: "void" },
+                    { val: "b", text: "Obiectul final (Pizza)" },
+                    { val: "c", text: "Obiectul Builder (this)" },
+                    { val: "d", text: "boolean" }
+                ],
+                correct: "c",
+                expl: "Returnează `this` pentru a permite 'method chaining' (apeluri înlănțuite: `.cheese().pepperoni().build()`)."
+            },
+            {
+                id: 6,
+                text: "Care este diferența dintre Factory și Builder?",
+                options: [
+                    { val: "a", text: "Nu există diferență." },
+                    { val: "b", text: "Factory creează obiectul dintr-un pas, Builder îl construiește pas cu pas." },
+                    { val: "c", text: "Builder este structural, Factory este comportamental." },
+                    { val: "d", text: "Factory folosește interfețe, Builder nu." }
+                ],
+                correct: "b",
+                expl: "Factory este 'ia-l gata făcut'. Builder este 'configurează-l cum vrei, apoi construiește-l'."
+            },
+            {
+                id: 7,
+                text: "Un buton din UI care trebuie să execute o acțiune necunoscută la compilare folosește de obicei:",
+                options: [
+                    { val: "a", text: "Command" },
+                    { val: "b", text: "Observer" },
+                    { val: "c", text: "Strategy" },
+                    { val: "d", text: "Singleton" }
+                ],
+                correct: "a",
+                expl: "Butonul (Invoker) primește un obiect Command și apelează `execute()`, fără să știe ce face efectiv acea comandă."
+            },
+            {
+                id: 8,
+                text: "Ce principiu SOLID stă la baza pattern-ului Strategy?",
+                options: [
+                    { val: "a", text: "Open/Closed Principle" },
+                    { val: "b", text: "Interface Segregation" },
+                    { val: "c", text: "Dependency Inversion" },
+                    { val: "d", text: "Toate variantele" }
+                ],
+                correct: "a",
+                expl: "Poți adăuga noi strategii (algoritmi) fără a modifica clasa Context existentă (Open for extension, Closed for modification)."
+            },
+            {
+                id: 9,
+                text: "În Observer, cum este realizată decuplarea?",
+                options: [
+                    { val: "a", text: "Prin moștenire multiplă." },
+                    { val: "b", text: "Subiectul depinde doar de o interfață abstractă (Observer), nu de clase concrete." },
+                    { val: "c", text: "Prin folosirea de evenimente statice." },
+                    { val: "d", text: "Nu există decuplare." }
+                ],
+                correct: "b",
+                expl: "Subiectul știe doar că are o listă de `Observer`. Nu îi pasă dacă observatorul este un `SmsNotifier` sau un `Display`."
+            },
+            {
+                id: 10,
+                text: "Metoda `build()` din Builder este responsabilă pentru:",
+                options: [
+                    { val: "a", text: "Setarea parametrilor." },
+                    { val: "b", text: "Returnarea instanței finale a obiectului construit." },
+                    { val: "c", text: "Ștergerea obiectului." },
+                    { val: "d", text: "Validarea datelor." }
+                ],
+                correct: "b",
+                expl: "Metoda `build()` finalizează procesul și returnează produsul finit (de obicei apelând constructorul privat al produsului)."
+            }
+        ];
+
+        let score = 0;
+        const container = document.getElementById('quiz-container');
+
+        questions.forEach(q => {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            let optionsHtml = '';
+            q.options.forEach(opt => {
+                optionsHtml += `<label><input type="radio" name="q${q.id}" value="${opt.val}"> ${opt.text}</label>`;
+            });
+            card.innerHTML = `<div class="question-text">${q.id}. ${q.text}</div><div class="options">${optionsHtml}</div><button class="check-btn" onclick="checkAnswer(${q.id}, '${q.correct}')">Verifică</button><div id="feedback-${q.id}" class="feedback"></div>`;
+            container.appendChild(card);
+        });
+
+        function checkAnswer(id, correctVal) {
+            const selected = document.querySelector(`input[name="q${id}"]:checked`);
+            const feedbackDiv = document.getElementById(`feedback-${id}`);
+            const btn = document.querySelector(`button[onclick="checkAnswer(${id}, '${correctVal}')"]`);
+            if (!selected) return alert("Alege o variantă!");
+            
+            const inputs = document.querySelectorAll(`input[name="q${id}"]`);
+            inputs.forEach(input => input.disabled = true);
+            btn.disabled = true;
+            btn.textContent = "Verificat";
+            feedbackDiv.style.display = 'block';
+
+            const questionData = questions.find(q => q.id === id);
+            if (selected.value === correctVal) {
+                feedbackDiv.className = 'feedback correct';
+                feedbackDiv.innerHTML = `<strong>✅ Corect!</strong> ${questionData.expl}`;
+                score++;
+                document.getElementById('score-display').innerText = `Scor: ${score} / ${questions.length}`;
+            } else {
+                feedbackDiv.className = 'feedback incorrect';
+                feedbackDiv.innerHTML = `<strong>❌ Greșit.</strong> ${questionData.expl}`;
+            }
+        }
+    </script>
+</body>
+</html>

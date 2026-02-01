@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Java - Lab 12: Advanced</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3e5f5; color: #4a148c; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { text-align: center; color: #7b1fa2; margin-bottom: 30px; border-bottom: 3px solid #7b1fa2; padding-bottom: 10px; }
+        .quiz-container { display: flex; flex-direction: column; gap: 20px; }
+        .question-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-left: 6px solid #7b1fa2; }
+        .question-text { font-weight: 700; font-size: 1.1em; margin-bottom: 15px; }
+        .options label { display: flex; align-items: center; padding: 12px; border-radius: 8px; cursor: pointer; border: 1px solid #e1bee7; margin-bottom: 8px; transition: all 0.2s; }
+        .options label:hover { background-color: #e1bee7; border-color: #7b1fa2; }
+        input[type="radio"] { margin-right: 15px; transform: scale(1.3); accent-color: #7b1fa2; }
+        .check-btn { background-color: #7b1fa2; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-size: 1em; margin-top: 15px; font-weight: bold; transition: background 0.3s; }
+        .check-btn:hover { background-color: #4a148c; }
+        .check-btn:disabled { background-color: #ba68c8; cursor: not-allowed; }
+        .feedback { margin-top: 15px; padding: 15px; border-radius: 8px; display: none; }
+        .feedback.correct { background-color: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
+        .feedback.incorrect { background-color: #ffebee; color: #b71c1c; border: 1px solid #ef9a9a; }
+        .score-board { position: fixed; bottom: 20px; right: 20px; background: #4a148c; color: white; padding: 15px 25px; border-radius: 50px; font-weight: bold; font-size: 1.2em; z-index: 100; }
+    </style>
+</head>
+<body>
+
+    <h1>🚀 Quiz: Advanced Java</h1>
+    
+    <div class="quiz-container" id="quiz-container"></div>
+    <div class="score-board" id="score-display">Scor: 0 / 10</div>
+
+    <script>
+        const questions = [
+            {
+                id: 1,
+                text: "Ce interfață trebuie să implementeze o clasă pentru a putea fi serializată nativ în Java?",
+                options: [
+                    { val: "a", text: "Cloneable" },
+                    { val: "b", text: "Serializable" },
+                    { val: "c", text: "Comparable" },
+                    { val: "d", text: "JsonSerializable" }
+                ],
+                correct: "b",
+                expl: "`Serializable` este o interfață marker (fără metode) necesară pentru `ObjectOutputStream`."
+            },
+            {
+                id: 2,
+                text: "Ce face cuvântul cheie `transient`?",
+                options: [
+                    { val: "a", text: "Face variabila thread-safe." },
+                    { val: "b", text: "Marchează un câmp pentru a NU fi serializat." },
+                    { val: "c", text: "Face variabila constantă." },
+                    { val: "d", text: "Permite accesul prin Reflection." }
+                ],
+                correct: "b",
+                expl: "Câmpurile `transient` sunt ignorate la serializare (valoarea lor nu este salvată, devine null/0 la deserializare)."
+            },
+            {
+                id: 3,
+                text: "Ce mecanism permite inspectarea și modificarea claselor la runtime?",
+                options: [
+                    { val: "a", text: "Serialization" },
+                    { val: "b", text: "Polymorphism" },
+                    { val: "c", text: "Reflection" },
+                    { val: "d", text: "Encapsulation" }
+                ],
+                correct: "c",
+                expl: "Reflection (java.lang.reflect) permite analiza și manipularea dinamică a structurii claselor."
+            },
+            {
+                id: 4,
+                text: "Cum poți accesa un câmp `private` folosind Reflection?",
+                options: [
+                    { val: "a", text: "Nu se poate, e privat." },
+                    { val: "b", text: "Apelând `field.setAccessible(true)`." },
+                    { val: "c", text: "Folosind `super.field`." },
+                    { val: "d", text: "Schimbând modificatorul în cod." }
+                ],
+                correct: "b",
+                expl: "`setAccessible(true)` dezactivează verificările de securitate ale limbajului pentru acel obiect Field."
+            },
+            {
+                id: 5,
+                text: "În testarea cu JUnit, ce adnotare marchează o metodă ca test?",
+                options: [
+                    { val: "a", text: "@Check" },
+                    { val: "b", text: "@Test" },
+                    { val: "c", text: "@Run" },
+                    { val: "d", text: "@Debug" }
+                ],
+                correct: "b",
+                expl: "@Test este adnotarea standard JUnit pentru a indica metodele de test."
+            },
+            {
+                id: 6,
+                text: "Ce bibliotecă este standardul pentru Mocking în Java?",
+                options: [
+                    { val: "a", text: "JUnit" },
+                    { val: "b", text: "Mockito" },
+                    { val: "c", text: "Jackson" },
+                    { val: "d", text: "Log4j" }
+                ],
+                correct: "b",
+                expl: "Mockito permite crearea de obiecte simulate (mock-uri) pentru a izola unitatea testată."
+            },
+            {
+                id: 7,
+                text: "Ce face `ObjectMapper` din biblioteca Jackson?",
+                options: [
+                    { val: "a", text: "Mapează obiecte Java în baza de date." },
+                    { val: "b", text: "Serialiizează/Deserialiizează obiecte în/din JSON." },
+                    { val: "c", text: "Copiază proprietăți între obiecte." },
+                    { val: "d", text: "Creează teste unitare." }
+                ],
+                correct: "b",
+                expl: "Jackson este cea mai populară bibliotecă pentru procesarea JSON în Java."
+            },
+            {
+                id: 8,
+                text: "Ce retention policy este necesară pentru ca o adnotare să fie vizibilă prin Reflection?",
+                options: [
+                    { val: "a", text: "SOURCE" },
+                    { val: "b", text: "CLASS" },
+                    { val: "c", text: "RUNTIME" },
+                    { val: "d", text: "PUBLIC" }
+                ],
+                correct: "c",
+                expl: "Doar adnotările cu `@Retention(RetentionPolicy.RUNTIME)` sunt păstrate în bytecode și accesibile la execuție."
+            },
+            {
+                id: 9,
+                text: "Ce este `serialVersionUID`?",
+                options: [
+                    { val: "a", text: "Un ID unic pentru fiecare obiect creat." },
+                    { val: "b", text: "Un ID de versiune pentru clasa serializabilă, pentru a verifica compatibilitatea." },
+                    { val: "c", text: "Un cod hash." },
+                    { val: "d", text: "O parolă de criptare." }
+                ],
+                correct: "b",
+                expl: "JVM compară `serialVersionUID` la deserializare. Dacă diferă (clasa s-a schimbat), aruncă `InvalidClassException`."
+            },
+            {
+                id: 10,
+                text: "Când se activează instrucțiunile `assert`?",
+                options: [
+                    { val: "a", text: "Întotdeauna." },
+                    { val: "b", text: "Doar dacă rulăm JVM-ul cu flag-ul `-ea`." },
+                    { val: "c", text: "Doar în modul Debug din IDE." },
+                    { val: "d", text: "Când apare o excepție." }
+                ],
+                correct: "b",
+                expl: "Implicit, aserțiunile sunt ignorate pentru performanță. Trebuie activate explicit cu `-ea`."
+            }
+        ];
+
+        let score = 0;
+        const container = document.getElementById('quiz-container');
+
+        questions.forEach(q => {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            let optionsHtml = '';
+            q.options.forEach(opt => {
+                optionsHtml += `<label><input type="radio" name="q${q.id}" value="${opt.val}"> ${opt.text}</label>`;
+            });
+            card.innerHTML = `<div class="question-text">${q.id}. ${q.text}</div><div class="options">${optionsHtml}</div><button class="check-btn" onclick="checkAnswer(${q.id}, '${q.correct}')">Verifică</button><div id="feedback-${q.id}" class="feedback"></div>`;
+            container.appendChild(card);
+        });
+
+        function checkAnswer(id, correctVal) {
+            const selected = document.querySelector(`input[name="q${id}"]:checked`);
+            const feedbackDiv = document.getElementById(`feedback-${id}`);
+            const btn = document.querySelector(`button[onclick="checkAnswer(${id}, '${correctVal}')"]`);
+            if (!selected) return alert("Alege o variantă!");
+            
+            const inputs = document.querySelectorAll(`input[name="q${id}"]`);
+            inputs.forEach(input => input.disabled = true);
+            btn.disabled = true;
+            btn.textContent = "Verificat";
+            feedbackDiv.style.display = 'block';
+
+            const questionData = questions.find(q => q.id === id);
+            if (selected.value === correctVal) {
+                feedbackDiv.className = 'feedback correct';
+                feedbackDiv.innerHTML = `<strong>✅ Corect!</strong> ${questionData.expl}`;
+                score++;
+                document.getElementById('score-display').innerText = `Scor: ${score} / ${questions.length}`;
+            } else {
+                feedbackDiv.className = 'feedback incorrect';
+                feedbackDiv.innerHTML = `<strong>❌ Greșit.</strong> ${questionData.expl}`;
+            }
+        }
+    </script>
+</body>
+</html>

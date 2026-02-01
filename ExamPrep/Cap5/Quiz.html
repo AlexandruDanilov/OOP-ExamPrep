@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Java - Lab 5: Clase Interne & Strings</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #fff0f5; color: #880e4f; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { text-align: center; color: #c2185b; margin-bottom: 30px; border-bottom: 3px solid #c2185b; padding-bottom: 10px; }
+        .quiz-container { display: flex; flex-direction: column; gap: 20px; }
+        .question-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-left: 6px solid #c2185b; }
+        .question-text { font-weight: 700; font-size: 1.1em; margin-bottom: 15px; }
+        .code-snippet { background-color: #263238; color: #eceff1; padding: 12px; border-radius: 6px; font-family: 'Consolas', monospace; font-size: 0.9em; margin-bottom: 15px; display: block; overflow-x: auto; }
+        .options label { display: flex; align-items: center; padding: 12px; border-radius: 8px; cursor: pointer; border: 1px solid #fce4ec; margin-bottom: 8px; transition: all 0.2s; }
+        .options label:hover { background-color: #f8bbd0; border-color: #c2185b; }
+        input[type="radio"] { margin-right: 15px; transform: scale(1.3); accent-color: #c2185b; }
+        
+        .check-btn { background-color: #c2185b; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-size: 1em; margin-top: 15px; font-weight: bold; transition: background 0.3s; }
+        .check-btn:hover { background-color: #ad1457; }
+        .check-btn:disabled { background-color: #bdbdbd; cursor: not-allowed; }
+
+        .feedback { margin-top: 15px; padding: 15px; border-radius: 8px; display: none; }
+        .feedback.correct { background-color: #e0f2f1; color: #004d40; border: 1px solid #80cbc4; }
+        .feedback.incorrect { background-color: #ffebee; color: #b71c1c; border: 1px solid #ef9a9a; }
+        
+        .score-board { position: fixed; bottom: 20px; right: 20px; background: #263238; color: white; padding: 15px 25px; border-radius: 50px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); font-weight: bold; font-size: 1.2em; z-index: 100; }
+    </style>
+</head>
+<body>
+
+    <h1>🪆 Quiz: Inner Classes & Strings</h1>
+    
+    <div class="quiz-container" id="quiz-container"></div>
+    <div class="score-board" id="score-display">Scor: 0 / 12</div>
+
+    <script>
+        const questions = [
+            {
+                id: 1,
+                text: "Cum instanțiezi o clasă internă normală (Non-static Inner Class)?",
+                code: "class Outer { class Inner {} }",
+                options: [
+                    { val: "a", text: "new Outer.Inner()" },
+                    { val: "b", text: "new Inner()" },
+                    { val: "c", text: "new Outer().new Inner()" },
+                    { val: "d", text: "Outer.new Inner()" }
+                ],
+                correct: "c",
+                expl: "O clasă internă normală depinde de o instanță. Trebuie întâi să creezi `Outer`, apoi pe baza lui creezi `Inner`."
+            },
+            {
+                id: 2,
+                text: "Poate o clasă internă statică (Static Nested) să acceseze direct variabilele de instanță (non-static) ale clasei exterioare?",
+                code: "class Outer { int x; static class Inner { void m() { /* x? */ } } }",
+                options: [
+                    { val: "a", text: "Da, fără probleme." },
+                    { val: "b", text: "Nu, deoarece nu are o referință la o instanță Outer." },
+                    { val: "c", text: "Doar dacă sunt publice." },
+                    { val: "d", text: "Doar folosind super.x" }
+                ],
+                correct: "b",
+                expl: "Fiind statică, Inner există independent de vreo instanță Outer. Nu știe 'al cui' x să îl acceseze."
+            },
+            {
+                id: 3,
+                text: "Ce afișează următorul cod?",
+                code: "String s1 = \"Java\";\nString s2 = new String(\"Java\");\nSystem.out.println(s1 == s2);",
+                options: [
+                    { val: "a", text: "true" },
+                    { val: "b", text: "false" },
+                    { val: "c", text: "Eroare de compilare" },
+                    { val: "d", text: "NullPointerException" }
+                ],
+                correct: "b",
+                expl: "`s1` e în String Pool. `s2` e forțat în Heap (new object). Referințele sunt diferite."
+            },
+            {
+                id: 4,
+                text: "Ce variabile locale poate accesa o clasă anonimă declarată într-o metodă?",
+                code: null,
+                options: [
+                    { val: "a", text: "Orice variabilă locală." },
+                    { val: "b", text: "Doar variabilele statice." },
+                    { val: "c", text: "Doar variabilele declarate final sau effectively final." },
+                    { val: "d", text: "Niciuna." }
+                ],
+                correct: "c",
+                expl: "Deoarece metoda se poate termina înainte ca obiectul anonim să dispară, Java copiază valorile. Pentru consistență, cere ca ele să nu se schimbe (final)."
+            },
+            {
+                id: 5,
+                text: "Care este rezultatul operației?",
+                code: "String s = \"Hello\";\ns.concat(\" World\");\nSystem.out.println(s);",
+                options: [
+                    { val: "a", text: "Hello World" },
+                    { val: "b", text: "Hello" },
+                    { val: "c", text: "World" },
+                    { val: "d", text: "Eroare" }
+                ],
+                correct: "b",
+                expl: "String este imutabil! Metoda `concat` returnează un string nou, dar `s` nu a fost reatribuit, deci rămâne neschimbat."
+            },
+            {
+                id: 6,
+                text: "Cum accesezi `this` al clasei exterioare dintr-o clasă internă?",
+                code: "class Outer { class Inner { void m() { /* vrei 'this' din Outer */ } } }",
+                options: [
+                    { val: "a", text: "this.Outer" },
+                    { val: "b", text: "super" },
+                    { val: "c", text: "Outer.this" },
+                    { val: "d", text: "parent" }
+                ],
+                correct: "c",
+                expl: "`this` simplu se referă la Inner. Pentru Outer, sintaxa este `NumeClasa.this`."
+            },
+            {
+                id: 7,
+                text: "De ce preferăm `StringBuilder` în bucle?",
+                code: "for(int i=0; i<1000; i++) s += i;",
+                options: [
+                    { val: "a", text: "Este thread-safe." },
+                    { val: "b", text: "Are metode mai multe." },
+                    { val: "c", text: "Nu creează mii de obiecte intermediare (e mutabil)." },
+                    { val: "d", text: "String nu poate conține cifre." }
+                ],
+                correct: "c",
+                expl: "`String` + `String` creează mereu un obiect nou. StringBuilder modifică buffer-ul intern, fiind mult mai rapid."
+            },
+            {
+                id: 8,
+                text: "Ce metodă transformă orice obiect în String (fără să arunce NullPointerException)?",
+                code: null,
+                options: [
+                    { val: "a", text: "obj.toString()" },
+                    { val: "b", text: "String.valueOf(obj)" },
+                    { val: "c", text: "(String) obj" },
+                    { val: "d", text: "String.parse(obj)" }
+                ],
+                correct: "b",
+                expl: "`String.valueOf(null)` returnează textul \"null\". `null.toString()` aruncă excepție."
+            },
+            {
+                id: 9,
+                text: "O clasă internă poate fi declarată `private`?",
+                code: null,
+                options: [
+                    { val: "a", text: "Nu, clasele sunt mereu public sau default." },
+                    { val: "b", text: "Da, și este foarte util pentru a ascunde implementarea." },
+                    { val: "c", text: "Doar dacă este statică." },
+                    { val: "d", text: "Nu, doar protected." }
+                ],
+                correct: "b",
+                expl: "Spre deosebire de clasele normale, clasele interne (fiind membri) pot fi private. Astfel, nimeni din afara clasei Outer nu le poate vedea."
+            },
+            {
+                id: 10,
+                text: "Ce face metoda `String.intern()`?",
+                code: null,
+                options: [
+                    { val: "a", text: "Șterge string-ul." },
+                    { val: "b", text: "Mută sau returnează referința șirului din String Pool." },
+                    { val: "c", text: "Concatenează două șiruri." },
+                    { val: "d", text: "Face string-ul mutabil." }
+                ],
+                correct: "b",
+                expl: "Dacă ai un string creat cu `new`, `intern()` verifică dacă există în Pool și îți dă referința de acolo (economie de memorie)."
+            },
+            {
+                id: 11,
+                text: "Clasele anonime pot avea constructori?",
+                code: null,
+                options: [
+                    { val: "a", text: "Da." },
+                    { val: "b", text: "Nu, pentru că nu au nume." },
+                    { val: "c", text: "Doar constructori default." },
+                    { val: "d", text: "Da, dar trebuie să fie private." }
+                ],
+                correct: "b",
+                expl: "Neavând nume, nu poți declara un constructor (care trebuie să aibă numele clasei). Inițializarea se face prin blocuri `{}`."
+            },
+            {
+                id: 12,
+                text: "Ce afișează `\"Java\".substring(1, 3)`?",
+                code: null,
+                options: [
+                    { val: "a", text: "av" },
+                    { val: "b", text: "ava" },
+                    { val: "c", text: "ja" },
+                    { val: "d", text: "jav" }
+                ],
+                correct: "a",
+                expl: "Indexare de la 0. Start (1) e inclus ('a'), End (3) e exclus ('a'). Deci ia indicii 1 și 2: 'av'."
+            }
+        ];
+
+        let score = 0;
+        const container = document.getElementById('quiz-container');
+
+        questions.forEach(q => {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            
+            let codeHtml = q.code ? `<code class="code-snippet">${q.code}</code>` : '';
+            
+            let optionsHtml = '';
+            q.options.forEach(opt => {
+                optionsHtml += `
+                    <label>
+                        <input type="radio" name="q${q.id}" value="${opt.val}">
+                        ${opt.text}
+                    </label>
+                `;
+            });
+
+            card.innerHTML = `
+                <div class="question-text">${q.id}. ${q.text}</div>
+                ${codeHtml}
+                <div class="options">${optionsHtml}</div>
+                <button class="check-btn" onclick="checkAnswer(${q.id}, '${q.correct}')">Verifică Răspunsul</button>
+                <div id="feedback-${q.id}" class="feedback"></div>
+            `;
+            container.appendChild(card);
+        });
+
+        function checkAnswer(id, correctVal) {
+            const selected = document.querySelector(`input[name="q${id}"]:checked`);
+            const feedbackDiv = document.getElementById(`feedback-${id}`);
+            const btn = document.querySelector(`button[onclick="checkAnswer(${id}, '${correctVal}')"]`);
+            
+            if (!selected) {
+                alert("Alege o variantă!");
+                return;
+            }
+
+            const inputs = document.querySelectorAll(`input[name="q${id}"]`);
+            inputs.forEach(input => input.disabled = true);
+            btn.disabled = true;
+            btn.textContent = "Verificat";
+
+            const questionData = questions.find(q => q.id === id);
+            feedbackDiv.style.display = 'block';
+
+            if (selected.value === correctVal) {
+                feedbackDiv.className = 'feedback correct';
+                feedbackDiv.innerHTML = `<strong>✅ Corect!</strong> ${questionData.expl}`;
+                score++;
+                document.getElementById('score-display').innerText = `Scor: ${score} / ${questions.length}`;
+            } else {
+                feedbackDiv.className = 'feedback incorrect';
+                feedbackDiv.innerHTML = `<strong>❌ Greșit.</strong> ${questionData.expl}`;
+            }
+        }
+    </script>
+</body>
+</html>

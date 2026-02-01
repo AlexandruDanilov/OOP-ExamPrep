@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Java - Lab 11: Functional & Streams</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e0f7fa; color: #006064; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { text-align: center; color: #00838f; margin-bottom: 30px; border-bottom: 3px solid #00838f; padding-bottom: 10px; }
+        .quiz-container { display: flex; flex-direction: column; gap: 20px; }
+        .question-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-left: 6px solid #00838f; }
+        .question-text { font-weight: 700; font-size: 1.1em; margin-bottom: 15px; }
+        .code-snippet { background-color: #263238; color: #eceff1; padding: 12px; border-radius: 6px; font-family: 'Consolas', monospace; font-size: 0.9em; margin-bottom: 15px; display: block; overflow-x: auto; }
+        .options label { display: flex; align-items: center; padding: 12px; border-radius: 8px; cursor: pointer; border: 1px solid #b2ebf2; margin-bottom: 8px; transition: all 0.2s; }
+        .options label:hover { background-color: #b2ebf2; border-color: #00838f; }
+        input[type="radio"] { margin-right: 15px; transform: scale(1.3); accent-color: #00838f; }
+        .check-btn { background-color: #00838f; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-size: 1em; margin-top: 15px; font-weight: bold; transition: background 0.3s; }
+        .check-btn:hover { background-color: #006064; }
+        .check-btn:disabled { background-color: #80deea; cursor: not-allowed; }
+        .feedback { margin-top: 15px; padding: 15px; border-radius: 8px; display: none; }
+        .feedback.correct { background-color: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
+        .feedback.incorrect { background-color: #ffebee; color: #b71c1c; border: 1px solid #ef9a9a; }
+        .score-board { position: fixed; bottom: 20px; right: 20px; background: #263238; color: white; padding: 15px 25px; border-radius: 50px; font-weight: bold; font-size: 1.2em; z-index: 100; }
+    </style>
+</head>
+<body>
+
+    <h1>🔧 Quiz: Functional & Streams</h1>
+    
+    <div class="quiz-container" id="quiz-container"></div>
+    <div class="score-board" id="score-display">Scor: 0 / 10</div>
+
+    <script>
+        const questions = [
+            {
+                id: 1,
+                text: "Ce este o Interfață Funcțională?",
+                options: [
+                    { val: "a", text: "O interfață cu metode statice." },
+                    { val: "b", text: "O interfață care extinde `Serializable`." },
+                    { val: "c", text: "O interfață cu exact o metodă abstractă." },
+                    { val: "d", text: "O interfață folosită doar în Stream-uri." }
+                ],
+                correct: "c",
+                expl: "Aceasta este definiția. Permite utilizarea lambda expressions. Poate avea oricâte metode default/static."
+            },
+            {
+                id: 2,
+                text: "Ce face `filter()` într-un Stream?",
+                code: "stream.filter(x -> x > 5)",
+                options: [
+                    { val: "a", text: "Modifică elementele." },
+                    { val: "b", text: "Selectează elementele care returnează `true` la predicat." },
+                    { val: "c", text: "Oprește stream-ul." },
+                    { val: "d", text: "Sortează elementele." }
+                ],
+                correct: "b",
+                expl: "`filter` primește un `Predicate<T>` și păstrează doar elementele care satisfac condiția."
+            },
+            {
+                id: 3,
+                text: "Care dintre următoarele este o operație terminală?",
+                options: [
+                    { val: "a", text: "map()" },
+                    { val: "b", text: "filter()" },
+                    { val: "c", text: "sorted()" },
+                    { val: "d", text: "collect()" }
+                ],
+                correct: "d",
+                expl: "`collect()` declanșează procesarea și returnează un rezultat concret (List, Set etc.). Celelalte sunt intermediare (lazy)."
+            },
+            {
+                id: 4,
+                text: "Ce interfață funcțională folosește metoda `map()`?",
+                options: [
+                    { val: "a", text: "Consumer<T>" },
+                    { val: "b", text: "Predicate<T>" },
+                    { val: "c", text: "Function<T, R>" },
+                    { val: "d", text: "Supplier<T>" }
+                ],
+                correct: "c",
+                expl: "`map` transformă un element de tip T într-unul de tip R, deci folosește `Function<T, R>`."
+            },
+            {
+                id: 5,
+                text: "Ce se întâmplă dacă apelezi o metodă pe un Stream deja închis (consumat)?",
+                options: [
+                    { val: "a", text: "Funcționează normal." },
+                    { val: "b", text: "Se creează automat un stream nou." },
+                    { val: "c", text: "Aruncă `IllegalStateException`." },
+                    { val: "d", text: "Returnează null." }
+                ],
+                correct: "c",
+                expl: "Stream-urile sunt de unică folosință. Odată ce s-a executat o operație terminală, stream-ul nu mai poate fi folosit."
+            },
+            {
+                id: 6,
+                text: "Care este varianta corectă de a scrie `s -> System.out.println(s)` folosind Method Reference?",
+                options: [
+                    { val: "a", text: "System.out.println(s)" },
+                    { val: "b", text: "System.out::println" },
+                    { val: "c", text: "System::out::println" },
+                    { val: "d", text: "System.out->println" }
+                ],
+                correct: "b",
+                expl: "`::` este operatorul pentru method references."
+            },
+            {
+                id: 7,
+                text: "Ce returnează `Optional.ofNullable(null)`?",
+                options: [
+                    { val: "a", text: "NullPointerException" },
+                    { val: "b", text: "Optional cu valoarea null." },
+                    { val: "c", text: "Optional.empty()" },
+                    { val: "d", text: "Eroare de compilare." }
+                ],
+                correct: "c",
+                expl: "`ofNullable` gestionează null-ul în siguranță, returnând un Optional gol (empty), spre deosebire de `of()` care aruncă eroare."
+            },
+            {
+                id: 8,
+                text: "Variabilele locale folosite într-o expresie lambda trebuie să fie:",
+                options: [
+                    { val: "a", text: "Statice." },
+                    { val: "b", text: "Private." },
+                    { val: "c", text: "Final sau Effectively Final." },
+                    { val: "d", text: "Volatile." }
+                ],
+                correct: "c",
+                expl: "Lambda capturează valorile, nu variabilele în sine. Pentru consistență, Java cere ca variabila să nu se modifice după inițializare."
+            },
+            {
+                id: 9,
+                text: "Ce face `findFirst()`?",
+                options: [
+                    { val: "a", text: "Returnează primul element ca `Optional`." },
+                    { val: "b", text: "Returnează primul element direct sau null." },
+                    { val: "c", text: "Returnează indexul 0." },
+                    { val: "d", text: "Verifică dacă lista e goală." }
+                ],
+                correct: "a",
+                expl: "Fiind o operație terminală short-circuit, returnează un `Optional` care conține primul element (sau e gol dacă stream-ul e gol)."
+            },
+            {
+                id: 10,
+                text: "Care este scopul `Consumer<T>`?",
+                options: [
+                    { val: "a", text: "Să returneze o valoare booleană." },
+                    { val: "b", text: "Să execute o acțiune pe un obiect (fără return)." },
+                    { val: "c", text: "Să transforme obiectul." },
+                    { val: "d", text: "Să furnizeze obiecte noi." }
+                ],
+                correct: "b",
+                expl: "`Consumer` are metoda `void accept(T t)`. Este folosit de exemplu în `forEach` pentru a printa sau salva elemente."
+            }
+        ];
+
+        let score = 0;
+        const container = document.getElementById('quiz-container');
+
+        questions.forEach(q => {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            let optionsHtml = '';
+            q.options.forEach(opt => {
+                optionsHtml += `<label><input type="radio" name="q${q.id}" value="${opt.val}"> ${opt.text}</label>`;
+            });
+            card.innerHTML = `<div class="question-text">${q.id}. ${q.text}</div><div class="options">${optionsHtml}</div><button class="check-btn" onclick="checkAnswer(${q.id}, '${q.correct}')">Verifică</button><div id="feedback-${q.id}" class="feedback"></div>`;
+            container.appendChild(card);
+        });
+
+        function checkAnswer(id, correctVal) {
+            const selected = document.querySelector(`input[name="q${id}"]:checked`);
+            const feedbackDiv = document.getElementById(`feedback-${id}`);
+            const btn = document.querySelector(`button[onclick="checkAnswer(${id}, '${correctVal}')"]`);
+            if (!selected) return alert("Alege o variantă!");
+            
+            const inputs = document.querySelectorAll(`input[name="q${id}"]`);
+            inputs.forEach(input => input.disabled = true);
+            btn.disabled = true;
+            btn.textContent = "Verificat";
+            feedbackDiv.style.display = 'block';
+
+            const questionData = questions.find(q => q.id === id);
+            if (selected.value === correctVal) {
+                feedbackDiv.className = 'feedback correct';
+                feedbackDiv.innerHTML = `<strong>✅ Corect!</strong> ${questionData.expl}`;
+                score++;
+                document.getElementById('score-display').innerText = `Scor: ${score} / ${questions.length}`;
+            } else {
+                feedbackDiv.className = 'feedback incorrect';
+                feedbackDiv.innerHTML = `<strong>❌ Greșit.</strong> ${questionData.expl}`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Java - Lab 8: Design Patterns</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3e5f5; color: #4a148c; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { text-align: center; color: #6a1b9a; margin-bottom: 30px; border-bottom: 3px solid #6a1b9a; padding-bottom: 10px; }
+        .quiz-container { display: flex; flex-direction: column; gap: 20px; }
+        .question-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-left: 6px solid #6a1b9a; }
+        .question-text { font-weight: 700; font-size: 1.1em; margin-bottom: 15px; }
+        .options label { display: flex; align-items: center; padding: 12px; border-radius: 8px; cursor: pointer; border: 1px solid #e1bee7; margin-bottom: 8px; transition: all 0.2s; }
+        .options label:hover { background-color: #f3e5f5; border-color: #6a1b9a; }
+        input[type="radio"] { margin-right: 15px; transform: scale(1.3); accent-color: #6a1b9a; }
+        .check-btn { background-color: #6a1b9a; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-size: 1em; margin-top: 15px; font-weight: bold; transition: background 0.3s; }
+        .check-btn:hover { background-color: #4a148c; }
+        .check-btn:disabled { background-color: #bdbdbd; cursor: not-allowed; }
+        .feedback { margin-top: 15px; padding: 15px; border-radius: 8px; display: none; }
+        .feedback.correct { background-color: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
+        .feedback.incorrect { background-color: #ffebee; color: #b71c1c; border: 1px solid #ef9a9a; }
+        .score-board { position: fixed; bottom: 20px; right: 20px; background: #212121; color: white; padding: 15px 25px; border-radius: 50px; font-weight: bold; font-size: 1.2em; z-index: 100; }
+    </style>
+</head>
+<body>
+
+    <h1>🏗️ Quiz: Design Patterns I</h1>
+    
+    <div class="quiz-container" id="quiz-container"></div>
+    <div class="score-board" id="score-display">Scor: 0 / 10</div>
+
+    <script>
+        const questions = [
+            {
+                id: 1,
+                text: "Care este scopul principal al pattern-ului Singleton?",
+                options: [
+                    { val: "a", text: "Să creeze familii de obiecte." },
+                    { val: "b", text: "Să asigure o singură instanță a unei clase și acces global la ea." },
+                    { val: "c", text: "Să cloneze obiecte existente." },
+                    { val: "d", text: "Să ascundă implementarea metodelor." }
+                ],
+                correct: "b",
+                expl: "Singleton garantează unicitatea instanței (ex: conexiune DB, Config) printr-un constructor privat și o instanță statică."
+            },
+            {
+                id: 2,
+                text: "Ce vizibilitate trebuie să aibă constructorul unui Singleton?",
+                options: [
+                    { val: "a", text: "public" },
+                    { val: "b", text: "protected" },
+                    { val: "c", text: "private" },
+                    { val: "d", text: "default" }
+                ],
+                correct: "c",
+                expl: "Constructorul trebuie să fie `private` pentru a împiedica apelul `new Singleton()` din alte clase."
+            },
+            {
+                id: 3,
+                text: "Care pattern este folosit pentru a crea familii de obiecte compatibile (ex: WindowsButton + WindowsMenu)?",
+                options: [
+                    { val: "a", text: "Factory Method" },
+                    { val: "b", text: "Singleton" },
+                    { val: "c", text: "Abstract Factory" },
+                    { val: "d", text: "Proxy" }
+                ],
+                correct: "c",
+                expl: "Abstract Factory garantează consistența între produsele create (o fabrică de Windows va crea doar componente Windows)."
+            },
+            {
+                id: 4,
+                text: "Ce problemă a supraîncărcării (overloading) rezolvă pattern-ul Visitor?",
+                options: [
+                    { val: "a", text: "Overloading-ul este prea lent." },
+                    { val: "b", text: "Java decide metoda la compilare (static), ignorând tipul real la runtime." },
+                    { val: "c", text: "Overloading nu permite parametri." },
+                    { val: "d", text: "Nu există overloading în Java." }
+                ],
+                correct: "b",
+                expl: "Fără Visitor (Double Dispatch), apelul `export(node)` va executa varianta generală `export(Node)`, chiar dacă obiectul real este `City`."
+            },
+            {
+                id: 5,
+                text: "Care metodă este esențială în interfața elementului vizitat (Visitable) din pattern-ul Visitor?",
+                options: [
+                    { val: "a", text: "visit()" },
+                    { val: "b", text: "create()" },
+                    { val: "c", text: "getInstance()" },
+                    { val: "d", text: "accept(Visitor v)" }
+                ],
+                correct: "d",
+                expl: "Metoda `accept` primește vizitatorul și apelează `v.visit(this)`, forțând determinarea tipului corect la runtime."
+            },
+            {
+                id: 6,
+                text: "Care este cea mai sigură și simplă implementare a unui Singleton în Java?",
+                options: [
+                    { val: "a", text: "Lazy Initialization cu if-null." },
+                    { val: "b", text: "Eager Initialization (static final)." },
+                    { val: "c", text: "Enum Singleton." },
+                    { val: "d", text: "Double-checked locking." }
+                ],
+                correct: "c",
+                expl: "Enum-ul gestionează automat serializarea, instanțierea și thread-safety-ul, fiind imposibil de spart prin Reflection."
+            },
+            {
+                id: 7,
+                text: "Ce face un Virtual Proxy?",
+                options: [
+                    { val: "a", text: "Creează copii ale obiectelor." },
+                    { val: "b", text: "Amână crearea unui obiect costisitor până când este necesar (Lazy Loading)." },
+                    { val: "c", text: "Iterează printr-o colecție." },
+                    { val: "d", text: "Verifică permisiunile de acces." }
+                ],
+                correct: "b",
+                expl: "Virtual Proxy este folosit pentru a optimiza performanța, încărcând resursele grele (imagini, db) doar la cerere."
+            },
+            {
+                id: 8,
+                text: "De ce Singleton este uneori considerat Anti-Pattern?",
+                options: [
+                    { val: "a", text: "Este prea lent." },
+                    { val: "b", text: "Introduce stare globală și face testarea unitară dificilă." },
+                    { val: "c", text: "Nu poate fi compilat." },
+                    { val: "d", text: "Ocupă prea multă memorie." }
+                ],
+                correct: "b",
+                expl: "Dependențele ascunse și starea globală fac codul greu de izolat pentru teste (mocking dificil)."
+            },
+            {
+                id: 9,
+                text: "În Factory Method, cine decide clasa obiectului creat?",
+                options: [
+                    { val: "a", text: "Clientul, folosind `new`." },
+                    { val: "b", text: "Clasa părinte (Creator)." },
+                    { val: "c", text: "Subclasele (ConcreteCreator)." },
+                    { val: "d", text: "Baza de date." }
+                ],
+                correct: "c",
+                expl: "Metoda fabrică este abstractă în părinte și implementată în subclase, care decid ce produs concret returnează."
+            },
+            {
+                id: 10,
+                text: "Ce principiu SOLID este susținut puternic de Factory Method?",
+                options: [
+                    { val: "a", text: "Single Responsibility Principle." },
+                    { val: "b", text: "Open/Closed Principle." },
+                    { val: "c", text: "Liskov Substitution Principle." },
+                    { val: "d", text: "Interface Segregation Principle." }
+                ],
+                correct: "b",
+                expl: "Poți introduce noi tipuri de produse în program fără a modifica codul client existent (Open for extension, Closed for modification)."
+            }
+        ];
+
+        let score = 0;
+        const container = document.getElementById('quiz-container');
+
+        questions.forEach(q => {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            let optionsHtml = '';
+            q.options.forEach(opt => {
+                optionsHtml += `<label><input type="radio" name="q${q.id}" value="${opt.val}"> ${opt.text}</label>`;
+            });
+            card.innerHTML = `<div class="question-text">${q.id}. ${q.text}</div><div class="options">${optionsHtml}</div><button class="check-btn" onclick="checkAnswer(${q.id}, '${q.correct}')">Verifică</button><div id="feedback-${q.id}" class="feedback"></div>`;
+            container.appendChild(card);
+        });
+
+        function checkAnswer(id, correctVal) {
+            const selected = document.querySelector(`input[name="q${id}"]:checked`);
+            const feedbackDiv = document.getElementById(`feedback-${id}`);
+            const btn = document.querySelector(`button[onclick="checkAnswer(${id}, '${correctVal}')"]`);
+            if (!selected) return alert("Alege o variantă!");
+            
+            const inputs = document.querySelectorAll(`input[name="q${id}"]`);
+            inputs.forEach(input => input.disabled = true);
+            btn.disabled = true;
+            btn.textContent = "Verificat";
+            feedbackDiv.style.display = 'block';
+
+            const questionData = questions.find(q => q.id === id);
+            if (selected.value === correctVal) {
+                feedbackDiv.className = 'feedback correct';
+                feedbackDiv.innerHTML = `<strong>✅ Corect!</strong> ${questionData.expl}`;
+                score++;
+                document.getElementById('score-display').innerText = `Scor: ${score} / ${questions.length}`;
+            } else {
+                feedbackDiv.className = 'feedback incorrect';
+                feedbackDiv.innerHTML = `<strong>❌ Greșit.</strong> ${questionData.expl}`;
+            }
+        }
+    </script>
+</body>
+</html>

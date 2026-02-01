@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Java - Lab 4: Abstractizare</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0fdf4; color: #14532d; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { text-align: center; color: #16a34a; margin-bottom: 30px; border-bottom: 3px solid #16a34a; padding-bottom: 10px; }
+        .quiz-container { display: flex; flex-direction: column; gap: 20px; }
+        .question-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-left: 6px solid #16a34a; }
+        .question-text { font-weight: 700; font-size: 1.1em; margin-bottom: 15px; }
+        .code-snippet { background-color: #1e293b; color: #f1f5f9; padding: 12px; border-radius: 6px; font-family: 'Consolas', monospace; font-size: 0.9em; margin-bottom: 15px; display: block; overflow-x: auto; }
+        .options label { display: flex; align-items: center; padding: 12px; border-radius: 8px; cursor: pointer; border: 1px solid #dcfce7; margin-bottom: 8px; transition: all 0.2s; }
+        .options label:hover { background-color: #dcfce7; border-color: #16a34a; }
+        input[type="radio"] { margin-right: 15px; transform: scale(1.3); accent-color: #16a34a; }
+        
+        .check-btn { background-color: #16a34a; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-size: 1em; margin-top: 15px; font-weight: bold; transition: background 0.3s; }
+        .check-btn:hover { background-color: #15803d; }
+        .check-btn:disabled { background-color: #94a3b8; cursor: not-allowed; }
+
+        .feedback { margin-top: 15px; padding: 15px; border-radius: 8px; display: none; }
+        .feedback.correct { background-color: #dcfce7; color: #14532d; border: 1px solid #86efac; }
+        .feedback.incorrect { background-color: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        
+        .score-board { position: fixed; bottom: 20px; right: 20px; background: #1e293b; color: white; padding: 15px 25px; border-radius: 50px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); font-weight: bold; font-size: 1.2em; z-index: 100; }
+    </style>
+</head>
+<body>
+
+    <h1>🌀 Quiz: Abstractizare & Records</h1>
+    
+    <div class="quiz-container" id="quiz-container"></div>
+    <div class="score-board" id="score-display">Scor: 0 / 12</div>
+
+    <script>
+        const questions = [
+            {
+                id: 1,
+                text: "Care este diferența majoră dintre o clasă abstractă și o interfață (înainte de Java 8)?",
+                code: null,
+                options: [
+                    { val: "a", text: "Clasele abstracte nu pot avea metode concrete." },
+                    { val: "b", text: "Interfețele pot avea constructori." },
+                    { val: "c", text: "O clasă poate implementa mai multe interfețe, dar poate moșteni o singură clasă abstractă." },
+                    { val: "d", text: "Nu există nicio diferență." }
+                ],
+                correct: "c",
+                expl: "Java nu suportă moștenire multiplă de clase (din cauza stării/câmpurilor), dar suportă implementare multiplă de interfețe (contracte)."
+            },
+            {
+                id: 2,
+                text: "Ce se întâmplă dacă o clasă concretă moștenește o clasă abstractă dar nu implementează toate metodele abstracte?",
+                code: "abstract class A { abstract void m(); }\nclass B extends A { }",
+                options: [
+                    { val: "a", text: "Funcționează, metoda m() va fi goală." },
+                    { val: "b", text: "Eroare de compilare. Clasa B trebuie declarată abstractă sau să implementeze m()." },
+                    { val: "c", text: "Eroare la runtime." },
+                    { val: "d", text: "Metoda m() devine opțională." }
+                ],
+                correct: "b",
+                expl: "Dacă ești clasă 'concretă' (adică poți fi instanțiată), ești OBLIGATĂ să oferi implementări pentru toate metodele abstracte moștenite."
+            },
+            {
+                id: 3,
+                text: "Ce modificator de acces au implicit metodele dintr-o interfață?",
+                code: "interface I { void test(); }",
+                options: [
+                    { val: "a", text: "private" },
+                    { val: "b", text: "protected" },
+                    { val: "c", text: "public abstract" },
+                    { val: "d", text: "default" }
+                ],
+                correct: "c",
+                expl: "În interfețe, `void test();` este tradus automat de compilator ca `public abstract void test();`."
+            },
+            {
+                id: 4,
+                text: "Ce fel de variabile poate conține o interfață?",
+                code: null,
+                options: [
+                    { val: "a", text: "Variabile de instanță private." },
+                    { val: "b", text: "Doar constante (public static final)." },
+                    { val: "c", text: "Orice tip de variabilă." },
+                    { val: "d", text: "Doar variabile protejate." }
+                ],
+                correct: "b",
+                expl: "Interfețele nu au stare (nu pot ține date de instanță). Pot avea doar constante globale."
+            },
+            {
+                id: 5,
+                text: "Care este avantajul principal al unui `Record`?",
+                code: "public record User(String name) {}",
+                options: [
+                    { val: "a", text: "Poate fi moștenit." },
+                    { val: "b", text: "Permite modificarea câmpurilor (setters)." },
+                    { val: "c", text: "Reduce codul boilerplate (constructori, getters, equals, toString generate automat) pentru clase imutabile." },
+                    { val: "d", text: "Este mai rapid decât o clasă normală." }
+                ],
+                correct: "c",
+                expl: "Records sunt 'data carriers'. Scrii o linie și primești o clasă completă, imutabilă, gata de folosit ca DTO."
+            },
+            {
+                id: 6,
+                text: "Ce face o metodă `default` într-o interfață?",
+                code: "interface I { default void m() { ... } }",
+                options: [
+                    { val: "a", text: "Este doar pentru vizibilitate pachet." },
+                    { val: "b", text: "Permite adăugarea de cod (implementare) în interfață, pentru a nu strica clasele existente." },
+                    { val: "c", text: "Nu poate fi suprascrisă." },
+                    { val: "d", text: "Este statică." }
+                ],
+                correct: "b",
+                expl: "Introduse în Java 8 pentru 'backward compatibility'. Dacă adaugi o metodă nouă într-o interfață veche, pui `default` ca să nu crape toate clasele care o implementau deja."
+            },
+            {
+                id: 7,
+                text: "Cum accesezi valoarea unui câmp într-un Record?",
+                code: "record Point(int x, int y) {}",
+                options: [
+                    { val: "a", text: "p.getX()" },
+                    { val: "b", text: "p.get_x()" },
+                    { val: "c", text: "p.x()" },
+                    { val: "d", text: "p.x" }
+                ],
+                correct: "c",
+                expl: "Records nu folosesc convenția JavaBean (`getX`). Numele metodei accesor este exact numele câmpului (`x()`)."
+            },
+            {
+                id: 8,
+                text: "Pot clasele abstracte să aibă constructori?",
+                code: null,
+                options: [
+                    { val: "a", text: "Nu, pentru că nu pot fi instanțiate." },
+                    { val: "b", text: "Da, pentru a inițializa câmpurile moștenite de subclase." },
+                    { val: "c", text: "Doar dacă sunt privați." },
+                    { val: "d", text: "Da, dar nu pot avea parametri." }
+                ],
+                correct: "b",
+                expl: "Da! Chiar dacă nu faci `new Abstract()`, constructorul ei este apelat de copil prin `super()` pentru a seta starea inițială."
+            },
+            {
+                id: 9,
+                text: "Ce se întâmplă dacă implementezi două interfețe care au aceeași metodă `default`?",
+                code: "interface A { default void m(){} } \ninterface B { default void m(){} } \nclass C implements A, B { ... }",
+                options: [
+                    { val: "a", text: "Se alege automat metoda din A." },
+                    { val: "b", text: "Eroare de compilare (Problema Diamantului)." },
+                    { val: "c", text: "Se alege metoda din B." },
+                    { val: "d", text: "Ambele sunt ignorate." }
+                ],
+                correct: "b",
+                expl: "Java nu știe pe care să o aleagă. Ești OBLIGAT să suprascrii metoda în clasa C și să specifici explicit (`A.super.m()`) sau să dai o nouă implementare."
+            },
+            {
+                id: 10,
+                text: "Constructorul unui `Enum` este întotdeauna:",
+                code: "enum Color { RED(1); Color(int c){} }",
+                options: [
+                    { val: "a", text: "Public" },
+                    { val: "b", text: "Protected" },
+                    { val: "c", text: "Private" },
+                    { val: "d", text: "Nu contează" }
+                ],
+                correct: "c",
+                expl: "Nu poți face `new Color()` din exterior. Instanțele Enum sunt create doar intern de JVM, deci constructorul este implicit privat."
+            },
+            {
+                id: 11,
+                text: "Pentru a crea un obiect imutabil, câmpurile trebuie să fie:",
+                code: null,
+                options: [
+                    { val: "a", text: "Public Static" },
+                    { val: "b", text: "Private Final" },
+                    { val: "c", text: "Volatile" },
+                    { val: "d", text: "Protected" }
+                ],
+                correct: "b",
+                expl: "`Private` ca să nu fie accesate direct, `Final` ca să nu poată fi re-asignate după constructor."
+            },
+            {
+                id: 12,
+                text: "Care este rolul principal al unui DTO (Data Transfer Object)?",
+                code: null,
+                options: [
+                    { val: "a", text: "Să conțină logica complexă de business." },
+                    { val: "b", text: "Să se conecteze la baza de date." },
+                    { val: "c", text: "Să transporte date între straturi fără a expune entitățile interne." },
+                    { val: "d", text: "Să fie o clasă părinte." }
+                ],
+                correct: "c",
+                expl: "DTO-ul este ca un curier. Ia datele, le duce la destinație și atât. Fără logică de business."
+            }
+        ];
+
+        let score = 0;
+        const container = document.getElementById('quiz-container');
+
+        questions.forEach(q => {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            
+            let codeHtml = q.code ? `<code class="code-snippet">${q.code}</code>` : '';
+            
+            let optionsHtml = '';
+            q.options.forEach(opt => {
+                optionsHtml += `
+                    <label>
+                        <input type="radio" name="q${q.id}" value="${opt.val}">
+                        ${opt.text}
+                    </label>
+                `;
+            });
+
+            card.innerHTML = `
+                <div class="question-text">${q.id}. ${q.text}</div>
+                ${codeHtml}
+                <div class="options">${optionsHtml}</div>
+                <button class="check-btn" onclick="checkAnswer(${q.id}, '${q.correct}')">Verifică Răspunsul</button>
+                <div id="feedback-${q.id}" class="feedback"></div>
+            `;
+            container.appendChild(card);
+        });
+
+        function checkAnswer(id, correctVal) {
+            const selected = document.querySelector(`input[name="q${id}"]:checked`);
+            const feedbackDiv = document.getElementById(`feedback-${id}`);
+            const btn = document.querySelector(`button[onclick="checkAnswer(${id}, '${correctVal}')"]`);
+            
+            if (!selected) {
+                alert("Alege o variantă!");
+                return;
+            }
+
+            const inputs = document.querySelectorAll(`input[name="q${id}"]`);
+            inputs.forEach(input => input.disabled = true);
+            btn.disabled = true;
+            btn.textContent = "Verificat";
+
+            const questionData = questions.find(q => q.id === id);
+            feedbackDiv.style.display = 'block';
+
+            if (selected.value === correctVal) {
+                feedbackDiv.className = 'feedback correct';
+                feedbackDiv.innerHTML = `<strong>✅ Corect!</strong> ${questionData.expl}`;
+                score++;
+                document.getElementById('score-display').innerText = `Scor: ${score} / ${questions.length}`;
+            } else {
+                feedbackDiv.className = 'feedback incorrect';
+                feedbackDiv.innerHTML = `<strong>❌ Greșit.</strong> ${questionData.expl}`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Java - Lab 10: Genericitate</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f8e9; color: #1b5e20; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { text-align: center; color: #2e7d32; margin-bottom: 30px; border-bottom: 3px solid #2e7d32; padding-bottom: 10px; }
+        .quiz-container { display: flex; flex-direction: column; gap: 20px; }
+        .question-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-left: 6px solid #2e7d32; }
+        .question-text { font-weight: 700; font-size: 1.1em; margin-bottom: 15px; }
+        .options label { display: flex; align-items: center; padding: 12px; border-radius: 8px; cursor: pointer; border: 1px solid #c8e6c9; margin-bottom: 8px; transition: all 0.2s; }
+        .options label:hover { background-color: #c8e6c9; border-color: #2e7d32; }
+        input[type="radio"] { margin-right: 15px; transform: scale(1.3); accent-color: #2e7d32; }
+        .check-btn { background-color: #2e7d32; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-size: 1em; margin-top: 15px; font-weight: bold; transition: background 0.3s; }
+        .check-btn:hover { background-color: #1b5e20; }
+        .check-btn:disabled { background-color: #a5d6a7; cursor: not-allowed; }
+        .feedback { margin-top: 15px; padding: 15px; border-radius: 8px; display: none; }
+        .feedback.correct { background-color: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
+        .feedback.incorrect { background-color: #ffebee; color: #b71c1c; border: 1px solid #ef9a9a; }
+        .score-board { position: fixed; bottom: 20px; right: 20px; background: #1b5e20; color: white; padding: 15px 25px; border-radius: 50px; font-weight: bold; font-size: 1.2em; z-index: 100; }
+    </style>
+</head>
+<body>
+
+    <h1>🏷️ Quiz: Generics</h1>
+    
+    <div class="quiz-container" id="quiz-container"></div>
+    <div class="score-board" id="score-display">Scor: 0 / 10</div>
+
+    <script>
+        const questions = [
+            {
+                id: 1,
+                text: "Ce este Type Erasure?",
+                options: [
+                    { val: "a", text: "Ștergerea obiectelor din memorie." },
+                    { val: "b", text: "Procesul prin care compilatorul elimină tipurile generice și le înlocuiește cu Object (sau bound-ul lor) la runtime." },
+                    { val: "c", text: "Ștergerea tipurilor primitive." },
+                    { val: "d", text: "Un bug în Java." }
+                ],
+                correct: "b",
+                expl: "Generics există doar la compilare. La runtime, `List<String>` este doar `List`. Aceasta asigură compatibilitatea cu versiunile vechi de Java."
+            },
+            {
+                id: 2,
+                text: "Este corectă atribuirea: `List<Object> l = new ArrayList<String>();`?",
+                options: [
+                    { val: "a", text: "Da, pentru că String moștenește Object." },
+                    { val: "b", text: "Nu, Generics sunt invarianți." },
+                    { val: "c", text: "Da, dar doar cu cast." },
+                    { val: "d", text: "Doar în Java 8+." }
+                ],
+                correct: "b",
+                expl: "Dacă ar fi permis, ai putea adăuga un `Integer` în `l` (care e listă de Object), dar lista reală e de String -> Dezastru. Java interzice asta."
+            },
+            {
+                id: 3,
+                text: "Ce poți adăuga într-o listă declarată `List<? extends Number>`?",
+                options: [
+                    { val: "a", text: "Integer" },
+                    { val: "b", text: "Double" },
+                    { val: "c", text: "Number" },
+                    { val: "d", text: "Nimic (doar null)." }
+                ],
+                correct: "d",
+                expl: "`? extends` înseamnă Producer. Compilerul nu știe ce tip exact de listă e (poate fi `List<Integer>` sau `List<Double>`), deci blochează adăugarea."
+            },
+            {
+                id: 4,
+                text: "Ce înseamnă PECS?",
+                options: [
+                    { val: "a", text: "Private Encapsulation, Class Static" },
+                    { val: "b", text: "Producer Extends, Consumer Super" },
+                    { val: "c", text: "Polymorphism, Encapsulation, Classes, Structure" },
+                    { val: "d", text: "Parameter Erasure Check System" }
+                ],
+                correct: "b",
+                expl: "Dacă doar citești (Producer) folosești `extends`. Dacă scrii (Consumer) folosești `super`."
+            },
+            {
+                id: 5,
+                text: "Poți crea o instanță a unui tip generic `new T()`?",
+                options: [
+                    { val: "a", text: "Da." },
+                    { val: "b", text: "Nu, din cauza Type Erasure." },
+                    { val: "c", text: "Doar dacă T extinde Object." },
+                    { val: "d", text: "Doar folosind Reflection." }
+                ],
+                correct: "b",
+                expl: "La runtime, JVM nu știe ce clasă este `T` (informația a fost ștearsă), deci nu o poate instanția direct."
+            },
+            {
+                id: 6,
+                text: "Care este bound-ul corect pentru o clasă `Sorter<T>` care trebuie să compare elemente?",
+                options: [
+                    { val: "a", text: "T extends Object" },
+                    { val: "b", text: "T extends Comparable<T>" },
+                    { val: "c", text: "T super Comparable" },
+                    { val: "d", text: "T implements Comparator" }
+                ],
+                correct: "b",
+                expl: "`T extends Comparable<T>` garantează că obiectele de tip T au metoda `compareTo` și pot fi sortate."
+            },
+            {
+                id: 7,
+                text: "Poți folosi primitive (int, double) ca parametri generici?",
+                options: [
+                    { val: "a", text: "Da." },
+                    { val: "b", text: "Nu, trebuie folosite clasele Wrapper (Integer, Double)." },
+                    { val: "c", text: "Doar în array-uri." },
+                    { val: "d", text: "Doar int, nu și double." }
+                ],
+                correct: "b",
+                expl: "Generics funcționează doar cu obiecte care moștenesc `Object`. Primitivele nu sunt obiecte, deci folosim Wrappers."
+            },
+            {
+                id: 8,
+                text: "Ce tip de wildcard folosești dacă vrei să adaugi elemente într-o listă?",
+                options: [
+                    { val: "a", text: "? extends T" },
+                    { val: "b", text: "?" },
+                    { val: "c", text: "? super T" },
+                    { val: "d", text: "T" }
+                ],
+                correct: "c",
+                expl: "`Consumer Super`. Dacă lista acceptă părinții lui T (`? super T`), sigur acceptă și T."
+            },
+            {
+                id: 9,
+                text: "Ce este un 'Raw Type'?",
+                options: [
+                    { val: "a", text: "Un tip primitiv." },
+                    { val: "b", text: "O clasă generică folosită fără parametri de tip (ex: List)." },
+                    { val: "c", text: "Un tip imutabil." },
+                    { val: "d", text: "O interfață." }
+                ],
+                correct: "b",
+                expl: "Folosirea `List` în loc de `List<String>` este Raw Type. Se pierde siguranța tipurilor și apar warning-uri."
+            },
+            {
+                id: 10,
+                text: "Array-urile în Java sunt:",
+                options: [
+                    { val: "a", text: "Invariante." },
+                    { val: "b", text: "Covariante." },
+                    { val: "c", text: "Contravariante." },
+                    { val: "d", text: "Generice." }
+                ],
+                correct: "b",
+                expl: "`String[]` este considerat subtip al lui `Object[]` (Covarianță). Asta permite erori la runtime (`ArrayStoreException`), spre deosebire de Generics care sunt Invarianți."
+            }
+        ];
+
+        let score = 0;
+        const container = document.getElementById('quiz-container');
+
+        questions.forEach(q => {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            let optionsHtml = '';
+            q.options.forEach(opt => {
+                optionsHtml += `<label><input type="radio" name="q${q.id}" value="${opt.val}"> ${opt.text}</label>`;
+            });
+            card.innerHTML = `<div class="question-text">${q.id}. ${q.text}</div><div class="options">${optionsHtml}</div><button class="check-btn" onclick="checkAnswer(${q.id}, '${q.correct}')">Verifică</button><div id="feedback-${q.id}" class="feedback"></div>`;
+            container.appendChild(card);
+        });
+
+        function checkAnswer(id, correctVal) {
+            const selected = document.querySelector(`input[name="q${id}"]:checked`);
+            const feedbackDiv = document.getElementById(`feedback-${id}`);
+            const btn = document.querySelector(`button[onclick="checkAnswer(${id}, '${correctVal}')"]`);
+            if (!selected) return alert("Alege o variantă!");
+            
+            const inputs = document.querySelectorAll(`input[name="q${id}"]`);
+            inputs.forEach(input => input.disabled = true);
+            btn.disabled = true;
+            btn.textContent = "Verificat";
+            feedbackDiv.style.display = 'block';
+
+            const questionData = questions.find(q => q.id === id);
+            if (selected.value === correctVal) {
+                feedbackDiv.className = 'feedback correct';
+                feedbackDiv.innerHTML = `<strong>✅ Corect!</strong> ${questionData.expl}`;
+                score++;
+                document.getElementById('score-display').innerText = `Scor: ${score} / ${questions.length}`;
+            } else {
+                feedbackDiv.className = 'feedback incorrect';
+                feedbackDiv.innerHTML = `<strong>❌ Greșit.</strong> ${questionData.expl}`;
+            }
+        }
+    </script>
+</body>
+</html>

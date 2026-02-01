@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Java - Lab 3: Inheritance & Polymorphism</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #fff8e1; color: #f57f17; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { text-align: center; color: #f9a825; margin-bottom: 30px; border-bottom: 3px solid #f9a825; padding-bottom: 10px; }
+        .quiz-container { display: flex; flex-direction: column; gap: 20px; }
+        .question-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-left: 6px solid #f9a825; }
+        .question-text { font-weight: 700; font-size: 1.1em; margin-bottom: 15px; }
+        .code-snippet { background-color: #263238; color: #eceff1; padding: 12px; border-radius: 6px; font-family: 'Consolas', monospace; font-size: 0.9em; margin-bottom: 15px; display: block; overflow-x: auto; }
+        .options label { display: flex; align-items: center; padding: 12px; border-radius: 8px; cursor: pointer; border: 1px solid #ffe082; margin-bottom: 8px; transition: all 0.2s; }
+        .options label:hover { background-color: #fff9c4; border-color: #f9a825; }
+        input[type="radio"] { margin-right: 15px; transform: scale(1.3); accent-color: #f9a825; }
+        .check-btn { background-color: #f9a825; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-size: 1em; margin-top: 15px; font-weight: bold; }
+        .check-btn:hover { background-color: #e6880d; }
+        .check-btn:disabled { background-color: #ccc; cursor: not-allowed; }
+        .feedback { margin-top: 15px; padding: 15px; border-radius: 8px; display: none; }
+        .feedback.correct { background-color: #c8e6c9; color: #1b5e20; border: 1px solid #a5d6a7; }
+        .feedback.incorrect { background-color: #ffcdd2; color: #b71c1c; border: 1px solid #ef9a9a; }
+        .score-board { position: fixed; bottom: 20px; right: 20px; background: #263238; color: white; padding: 15px 25px; border-radius: 50px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); font-weight: bold; font-size: 1.2em; z-index: 100; }
+    </style>
+</head>
+<body>
+
+    <h1>🏛️ Quiz: Lab 3 (Inheritance & Polymorphism)</h1>
+    <div class="quiz-container" id="quiz-container"></div>
+    <div class="score-board" id="score-display">Score: 0 / 12</div>
+
+    <script>
+        const questions = [
+            { id: 1, text: "What keyword is used for inheritance?", code: null, options: [{ val: "a", text: "implements" }, { val: "b", text: "extends" }, { val: "c", text: "inherits" }, { val: "d", text: "super" }], correct: "b", expl: "Use `extends` to inherit from a class." },
+            { id: 2, text: "Can you use `super()` in a static method?", code: null, options: [{ val: "a", text: "Yes" }, { val: "b", text: "No" }, { val: "c", text: "Only in Java 8+" }, { val: "d", text: "Only with static parent" }], correct: "b", expl: "Static methods don't have instance context, so `super()` cannot be used." },
+            { id: 3, text: "What does upcasting do?", code: null, options: [{ val: "a", text: "Converts child to parent" }, { val: "b", text: "Converts parent to child" }, { val: "c", text: "Deletes object" }, { val: "d", text: "Copies object" }], correct: "a", expl: "Upcasting converts from child class to parent class (implicit, safe)." },
+            { id: 4, text: "When is a downcasting safe?", code: null, options: [{ val: "a", text: "Always" }, { val: "b", text: "After instanceof check" }, { val: "c", text: "Never" }, { val: "d", text: "Only with parent" }], correct: "b", expl: "Always check with `instanceof` before downcasting to avoid ClassCastException." },
+            { id: 5, text: "What is method overriding?", code: null, options: [{ val: "a", text: "Same signature in parent and child" }, { val: "b", text: "Different signature in different classes" }, { val: "c", text: "Multiple methods with same name" }, { val: "d", text: "Hiding static methods" }], correct: "a", expl: "Overriding means same method signature with different implementation in child class." },
+            { id: 6, text: "Can a final method be overridden?", code: null, options: [{ val: "a", text: "Yes" }, { val: "b", text: "No" }, { val: "c", text: "Only if parent is final" }, { val: "d", text: "Only in subpackages" }], correct: "b", expl: "Final methods cannot be overridden in subclasses." },
+            { id: 7, text: "What does the `Object` class provide?", code: null, options: [{ val: "a", text: "toString() and equals()" }, { val: "b", text: "toString(), equals(), hashCode()" }, { val: "c", text: "Only toString()" }, { val: "d", text: "Nothing required" }], correct: "b", expl: "Object provides toString(), equals(), hashCode() and other methods all classes inherit." },
+            { id: 8, text: "What is the difference between `==` and `.equals()`?", code: null, options: [{ val: "a", text: "No difference" }, { val: "b", text: "`==` compares references, `.equals()` compares content" }, { val: "c", text: "`==` compares content" }, { val: "d", text: "`.equals()` is for primitives" }], correct: "b", expl: "`==` checks reference equality, `.equals()` should compare logical content." },
+            { id: 9, text: "In method overriding, can the child restrict access?", code: null, options: [{ val: "a", text: "Yes" }, { val: "b", text: "No, only expand" }, { val: "c", text: "Only for private" }, { val: "d", text: "Only for static" }], correct: "b", expl: "Child method must have same or more permissive access than parent method." },
+            { id: 10, text: "What is polymorphism?", code: null, options: [{ val: "a", text: "Multiple inheritance" }, { val: "b", text: "Same interface, different implementations" }, { val: "c", text: "Method overloading" }, { val: "d", text: "Static methods" }], correct: "b", expl: "Polymorphism allows treating child objects as parent type for flexible code." },
+            { id: 11, text: "Can you instantiate an abstract class?", code: null, options: [{ val: "a", text: "Yes" }, { val: "b", text: "No" }, { val: "c", text: "Only with new" }, { val: "d", text: "Only static methods" }], correct: "b", expl: "Abstract classes cannot be instantiated; must use concrete subclass." },
+            { id: 12, text: "What is method hiding?", code: null, options: [{ val: "a", text: "Same as overriding" }, { val: "b", text: "Static methods in child hide parent static" }, { val: "c", text: "Private methods" }, { val: "d", text: "Inheritance feature" }], correct: "b", expl: "Method hiding occurs when a static method in child hides parent's static method." }
+        ];
+
+        let score = 0;
+        const container = document.getElementById('quiz-container');
+
+        questions.forEach(q => {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            let codeHtml = q.code ? `<code class="code-snippet">${q.code}</code>` : '';
+            let optionsHtml = '';
+            q.options.forEach(opt => {
+                optionsHtml += `<label><input type="radio" name="q${q.id}" value="${opt.val}"> ${opt.text}</label>`;
+            });
+            card.innerHTML = `<div class="question-text">${q.id}. ${q.text}</div>${codeHtml}<div class="options">${optionsHtml}</div><button class="check-btn" onclick="checkAnswer(${q.id}, '${q.correct}')">Check Answer</button><div id="feedback-${q.id}" class="feedback"></div>`;
+            container.appendChild(card);
+        });
+
+        function checkAnswer(id, correctVal) {
+            const selected = document.querySelector(`input[name="q${id}"]:checked`);
+            const feedbackDiv = document.getElementById(`feedback-${id}`);
+            const btn = document.querySelector(`button[onclick="checkAnswer(${id}, '${correctVal}')"]`);
+            if (!selected) { alert("Choose an option!"); return; }
+            const inputs = document.querySelectorAll(`input[name="q${id}"]`);
+            inputs.forEach(input => input.disabled = true);
+            btn.disabled = true;
+            btn.textContent = "Checked";
+            const questionData = questions.find(q => q.id === id);
+            feedbackDiv.style.display = 'block';
+            if (selected.value === correctVal) {
+                feedbackDiv.className = 'feedback correct';
+                feedbackDiv.innerHTML = `<strong>✅ Correct!</strong> ${questionData.expl}`;
+                score++;
+                document.getElementById('score-display').innerText = `Score: ${score} / ${questions.length}`;
+            } else {
+                feedbackDiv.className = 'feedback incorrect';
+                feedbackDiv.innerHTML = `<strong>❌ Incorrect.</strong> ${questionData.expl}`;
+            }
+        }
+    </script>
+</body>
+</html>
